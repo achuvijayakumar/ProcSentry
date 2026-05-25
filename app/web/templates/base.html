@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ProcSentry</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script>
+      document.addEventListener("htmx:configRequest", (event) => {
+        const token = document.cookie.split("; ").find((row) => row.startsWith("procsentry_csrf="))?.split("=")[1];
+        if (token) event.detail.headers["x-csrf-token"] = decodeURIComponent(token);
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.target.tagName === "INPUT") return;
+        if (event.key === "p") location.href = "/processes";
+        if (event.key === "a") location.href = "/alerts";
+        if (event.key === "d") location.href = "/duplicates";
+      });
+    </script>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100">
+    {% if request.app.state.capabilities.is_windows %}
+    <div class="bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950">
+      Windows development mode: Linux procfs, cgroup, systemd, deleted-executable, and namespace intelligence are disabled.
+    </div>
+    {% endif %}
+    <nav class="border-b border-zinc-800 bg-zinc-900">
+      <div class="mx-auto flex max-w-7xl items-center gap-5 px-4 py-3 text-sm">
+        <a class="font-semibold text-white" href="/">ProcSentry</a>
+        <a class="text-zinc-300 hover:text-white" href="/processes">Processes</a>
+        <a class="text-zinc-300 hover:text-white" href="/duplicates">Duplicates</a>
+        <a class="text-zinc-300 hover:text-white" href="/ports">Ports</a>
+        <a class="text-zinc-300 hover:text-white" href="/alerts">Alerts</a>
+        <a class="text-zinc-300 hover:text-white" href="/suspicious">Suspicious</a>
+        <a class="text-zinc-300 hover:text-white" href="/capabilities/view">Capabilities</a>
+        {% if request.app.state.settings.web.auth_enabled %}
+        <form method="post" action="/logout"><button class="text-zinc-300 hover:text-white">Logout</button></form>
+        {% endif %}
+        <span class="ml-auto rounded border border-zinc-700 px-2 py-1 text-xs text-zinc-300">{{ request.app.state.capabilities.system }}</span>
+      </div>
+    </nav>
+    <main class="mx-auto max-w-7xl px-4 py-6">
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

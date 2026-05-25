@@ -1,0 +1,12 @@
+rules:
+  - name: duplicate_uvicorn
+    condition:
+      process_name: uvicorn
+      duplicate_score: ">75"
+    action: notify
+
+  - name: ram_leak
+    condition:
+      memory_mb: ">500"
+    action: notify
+

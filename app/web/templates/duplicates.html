@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="mb-4 text-xl font-semibold">Duplicate Processes</h1>
+<div class="overflow-hidden rounded border border-zinc-800">
+  {% for group in groups %}
+  <div class="border-b border-zinc-800 bg-zinc-900 p-3 last:border-b-0">
+    <div class="font-medium">{{ group.confidence }}% confidence</div>
+    <div class="text-sm text-zinc-300">{{ group.reason }}</div>
+    <div class="mt-1 break-all text-xs text-zinc-500">PIDs {{ group.process_pids }}</div>
+    <button class="mt-2 rounded bg-zinc-700 px-3 py-1 text-xs"
+      hx-post="/api/duplicates/{{ group.id }}/resolve"
+      hx-target="closest div"
+      hx-swap="outerHTML">Mark reviewed</button>
+  </div>
+  {% else %}
+  <div class="bg-zinc-900 p-3 text-sm text-zinc-400">No duplicate groups detected</div>
+  {% endfor %}
+</div>
+{% endblock %}

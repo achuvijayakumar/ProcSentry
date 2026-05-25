@@ -1,0 +1,43 @@
+scan_interval: 5
+history_retention_days: 7
+data_dir: /var/lib/procsentry
+database_url: sqlite:////var/lib/procsentry/procsentry.db
+log_level: INFO
+
+duplicate_detection:
+  enabled: true
+  confidence_threshold: 80
+  suppression_window_seconds: 300
+  restart_loop_window_seconds: 120
+  restart_loop_threshold: 3
+  allowlist_fingerprints: []
+  allowlist_commands: []
+
+storage:
+  history_sample_interval_seconds: 15
+  maintenance_interval_seconds: 3600
+  wal_checkpoint_interval_seconds: 3600
+  vacuum_interval_seconds: 86400
+
+alerts:
+  ram_threshold_mb: 2000
+  cpu_threshold_percent: 90
+
+security:
+  enabled: true
+  random_name_entropy_threshold: 3.4
+  excessive_cpu_percent: 90
+
+web:
+  host: 127.0.0.1
+  port: 8080
+  auth_enabled: true
+  auth_username: admin
+  auth_password: change-me
+  session_secret: change-me-long-random-secret
+  csrf_enabled: true
+  secure_cookies: false
+
+healing:
+  enabled: false
+  dry_run: true

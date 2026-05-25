@@ -1,0 +1,14 @@
+services:
+  procsentry:
+    build: .
+    pid: host
+    network_mode: host
+    volumes:
+      - /proc:/proc:ro
+      - procsentry-data:/var/lib/procsentry
+    command: ["procsentry", "--config", "config/procsentry.yml", "web"]
+    restart: unless-stopped
+
+volumes:
+  procsentry-data:
+

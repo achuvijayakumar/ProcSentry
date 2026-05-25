@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="mb-4 text-xl font-semibold">Port Explorer</h1>
+<div class="overflow-x-auto rounded border border-zinc-800">
+  <table class="min-w-full text-left text-sm">
+    <thead class="bg-zinc-900 text-xs uppercase text-zinc-400"><tr><th class="px-3 py-2">Port</th><th>Proto</th><th>Address</th><th>Process</th><th>Exposure</th></tr></thead>
+    <tbody class="divide-y divide-zinc-800">
+      {% for row in rows %}
+      <tr><td class="px-3 py-2">{{ row.port }}</td><td>{{ row.protocol }}</td><td>{{ row.address }}</td><td><a class="text-cyan-300" href="/processes/{{ row.pid }}">{{ row.process }} ({{ row.pid }})</a></td><td>{% if row.public %}<span class="text-amber-300">public</span>{% else %}local{% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

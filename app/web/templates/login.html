@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ProcSentry Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="flex min-h-screen items-center justify-center bg-zinc-950 px-4 text-zinc-100">
+    <form class="w-full max-w-sm rounded border border-zinc-800 bg-zinc-900 p-6" method="post" action="/login">
+      <h1 class="mb-4 text-xl font-semibold">ProcSentry</h1>
+      {% if error %}<div class="mb-3 rounded bg-red-500 px-3 py-2 text-sm text-white">{{ error }}</div>{% endif %}
+      <label class="mb-2 block text-sm text-zinc-300">Username</label>
+      <input class="mb-3 w-full rounded border border-zinc-700 bg-zinc-950 px-3 py-2" name="username" autocomplete="username">
+      <label class="mb-2 block text-sm text-zinc-300">Password</label>
+      <input class="mb-4 w-full rounded border border-zinc-700 bg-zinc-950 px-3 py-2" name="password" type="password" autocomplete="current-password">
+      <button class="w-full rounded bg-cyan-700 px-3 py-2 font-medium">Sign in</button>
+    </form>
+  </body>
+</html>

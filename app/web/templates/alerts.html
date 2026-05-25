@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="mb-4 text-xl font-semibold">Alerts</h1>
+<div class="overflow-hidden rounded border border-zinc-800">
+  {% for alert in alerts %}
+  <div class="border-b border-zinc-800 bg-zinc-900 p-3 last:border-b-0">
+    <div class="text-sm"><span class="font-medium">{{ alert.severity }}</span> {{ alert.type }} / {{ alert.category }}</div>
+    <div>{{ alert.message }}</div>
+    <div class="text-xs text-zinc-500">{{ alert.created_at }}</div>
+    <button class="mt-2 rounded bg-zinc-700 px-3 py-1 text-xs"
+      hx-post="/api/alerts/{{ alert.id }}/resolve"
+      hx-target="closest div"
+      hx-swap="outerHTML">Acknowledge</button>
+  </div>
+  {% else %}
+  <div class="bg-zinc-900 p-3 text-sm text-zinc-400">No active alerts</div>
+  {% endfor %}
+</div>
+{% endblock %}

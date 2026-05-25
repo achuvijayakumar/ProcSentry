@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mb-4 flex items-center justify-between gap-3">
+  <h1 class="text-xl font-semibold">Process Explorer</h1>
+  <form class="flex gap-2" method="get">
+    <input class="rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm" name="q" value="{{ q }}" placeholder="Search command">
+    <label class="flex items-center gap-1 text-sm text-zinc-300"><input type="checkbox" name="suspicious" value="true" {% if suspicious %}checked{% endif %}> Suspicious</label>
+    <label class="flex items-center gap-1 text-sm text-zinc-300"><input type="checkbox" name="duplicates" value="true" {% if duplicates %}checked{% endif %}> Duplicates</label>
+    <button class="rounded bg-cyan-700 px-3 py-2 text-sm">Filter</button>
+  </form>
+</div>
+{% include "partials/process_table.html" %}
+{% endblock %}

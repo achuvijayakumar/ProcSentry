@@ -1,0 +1,18 @@
+[Unit]
+Description=ProcSentry Agent
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/procsentry
+ExecStart=/opt/procsentry/venv/bin/procsentry --config /etc/procsentry.yml daemon
+Restart=always
+RestartSec=5
+User=root
+RuntimeMaxSec=7d
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/procsentry
+
+[Install]
+WantedBy=multi-user.target

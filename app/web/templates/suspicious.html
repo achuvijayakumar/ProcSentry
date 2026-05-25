@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="mb-4 text-xl font-semibold">Suspicious Processes</h1>
+{% if processes %}
+{% include "partials/process_table.html" %}
+{% else %}
+<div class="rounded border border-zinc-800 bg-zinc-900 p-6 text-sm text-zinc-400">No suspicious processes detected.</div>
+{% endif %}
+{% endblock %}
+
