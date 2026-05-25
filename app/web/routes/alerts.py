@@ -13,7 +13,7 @@ templates = Jinja2Templates(directory="app/web/templates")
 @router.get("/alerts", response_class=HTMLResponse)
 def alerts_page(request: Request) -> HTMLResponse:
     alerts = request.app.state.repository.list_alerts(limit=500)
-    return templates.TemplateResponse("alerts.html", {"request": request, "alerts": alerts})
+    return templates.TemplateResponse(request, "alerts.html", {"alerts": alerts})
 
 
 @router.get("/api/alerts")

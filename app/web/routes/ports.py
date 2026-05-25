@@ -15,7 +15,7 @@ templates = Jinja2Templates(directory="app/web/templates")
 @router.get("/ports", response_class=HTMLResponse)
 def ports_page(request: Request) -> HTMLResponse:
     rows = _port_rows(request)
-    return templates.TemplateResponse("ports.html", {"request": request, "rows": rows})
+    return templates.TemplateResponse(request, "ports.html", {"rows": rows})
 
 
 @router.get("/api/ports")

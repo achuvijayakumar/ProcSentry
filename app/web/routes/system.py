@@ -93,6 +93,7 @@ def capabilities_page(request: Request) -> HTMLResponse:
     """Render capability overview."""
 
     return templates.TemplateResponse(
+        request,
         "capabilities.html",
-        {"request": request, "capabilities": asdict(request.app.state.capabilities)},
+        {"capabilities": asdict(request.app.state.capabilities)},
     )

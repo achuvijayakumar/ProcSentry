@@ -13,7 +13,7 @@ templates = Jinja2Templates(directory="app/web/templates")
 @router.get("/duplicates", response_class=HTMLResponse)
 def duplicate_page(request: Request) -> HTMLResponse:
     groups = request.app.state.repository.list_duplicate_groups(limit=200)
-    return templates.TemplateResponse("duplicates.html", {"request": request, "groups": groups})
+    return templates.TemplateResponse(request, "duplicates.html", {"groups": groups})
 
 
 @router.get("/api/duplicates")

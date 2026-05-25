@@ -27,9 +27,9 @@ def overview(request: Request) -> HTMLResponse:
     duplicates = repository.list_duplicate_groups(limit=50)
     metrics = MetricsService().snapshot()
     return templates.TemplateResponse(
+        request,
         "overview.html",
         {
-            "request": request,
             "processes": processes[:10],
             "alerts": alerts[:10],
             "duplicates": duplicates,
@@ -50,9 +50,9 @@ def process_page(
         limit=1000, query=q, suspicious=suspicious or None, duplicates=duplicates or None
     )
     return templates.TemplateResponse(
+        request,
         "processes.html",
         {
-            "request": request,
             "processes": processes,
             "q": q or "",
             "suspicious": suspicious,
@@ -65,7 +65,7 @@ def process_page(
 def suspicious_page(request: Request) -> HTMLResponse:
     processes = request.app.state.repository.list_processes(limit=500, suspicious=True)
     return templates.TemplateResponse(
-        "suspicious.html", {"request": request, "processes": processes}
+        request, "suspicious.html", {"processes": processes}
     )
 
 
@@ -76,8 +76,9 @@ def process_detail(request: Request, pid: int) -> HTMLResponse:
         raise HTTPException(status_code=404, detail="Process not found")
     notes = request.app.state.repository.list_process_notes(pid=pid, fingerprint=proc.fingerprint)
     return templates.TemplateResponse(
+        request,
         "process_detail.html",
-        {"request": request, "proc": proc, "ports": ports_from_record(proc), "notes": notes},
+        {"proc": proc, "ports": ports_from_record(proc), "notes": notes},
     )
 
 
@@ -93,13 +94,13 @@ def add_process_note(
         raise HTTPException(status_code=404, detail="Process not found")
     request.app.state.repository.add_process_note(note=note, tag=tag, pid=pid, fingerprint=proc.fingerprint)
     notes = request.app.state.repository.list_process_notes(pid=pid, fingerprint=proc.fingerprint)
-    return templates.TemplateResponse("partials/process_notes.html", {"request": request, "notes": notes, "proc": proc})
+    return templates.TemplateResponse(request, "partials/process_notes.html", {"notes": notes, "proc": proc})
 
 
 @router.get("/partials/process-table", response_class=HTMLResponse)
 def process_table(request: Request) -> HTMLResponse:
     processes = request.app.state.repository.list_processes(limit=200)
-    return templates.TemplateResponse("partials/process_table.html", {"request": request, "processes": processes})
+    return templates.TemplateResponse(request, "partials/process_table.html", {"processes": processes})
 
 
 @router.get("/partials/stats-cards", response_class=HTMLResponse)
@@ -110,7 +111,7 @@ def stats_cards(request: Request) -> HTMLResponse:
         "db_write_ms": runtime.db_write_ms,
         **request.app.state.repository.storage_metrics(),
     }
-    return templates.TemplateResponse("partials/stats_cards.html", {"request": request, "metrics": metrics})
+    return templates.TemplateResponse(request, "partials/stats_cards.html", {"metrics": metrics})
 
 
 @router.get("/api/processes")
