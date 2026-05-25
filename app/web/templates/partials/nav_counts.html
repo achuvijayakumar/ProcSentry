@@ -1,0 +1,11 @@
+<span id="nav-alert-badge"
+  hx-get="/partials/nav-counts"
+  hx-trigger="every 10s"
+  hx-swap="outerHTML">
+  {% if alert_count > 0 %}
+  <span class="inline-flex items-center justify-center rounded-full bg-red-600 px-1.5 font-mono text-xs font-bold text-white min-w-[1.25rem]">{{ alert_count }}</span>
+  {% endif %}
+  {% if suspicious_count > 0 %}
+  <span class="inline-flex items-center justify-center rounded-full bg-amber-600 px-1.5 font-mono text-xs font-bold text-zinc-950 min-w-[1.25rem]">{{ suspicious_count }}</span>
+  {% endif %}
+</span>

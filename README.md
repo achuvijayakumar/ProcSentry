@@ -33,9 +33,12 @@ ProcSentry is a **Linux-first VPS observability tool** focused on process intell
 
 | Question | ProcSentry feature |
 |---|---|
-| Why is my VPS slow? | CPU / RAM process tracking |
-| Did I accidentally start the same app twice? | Duplicate process detection |
-| What is listening on this port? | Port-to-process mapping |
+| Why is my VPS slow? | Top-CPU / RAM cards on `/` and live `/top` leaderboard |
+| Which of my apps is running right now? | Auto-detected app grouping on `/` |
+| Did I accidentally start the same app twice? | Duplicate process detection · `[ kill N dupes, keep oldest ]` |
+| What's safe to clean up? | `/suggestions` with explicit protect list and reasons |
+| Kill all workers of one app in one click? | `[ kill app ]` on each group |
+| What is listening on this port? | Port-to-process mapping with public-vs-local filter |
 | Is this process suspicious? | Lightweight security heuristics |
 | Is this process managed or manual? | systemd / cgroup / container hints |
 | Did this service keep restarting? | Restart-count and restart-loop signals |
@@ -244,41 +247,69 @@ ssh -L 8080:127.0.0.1:8080 root@your-vps
 
 ## Dashboard Overview
 
+The dashboard is designed for developers running multiple apps on a single VPS. It auto-detects projects under `/home/*/apps/`, `/opt/`, `/srv/`, `/var/www/`, plus systemd-managed services and well-known service binaries (nginx, redis, postgres, ollama, questdb, docker, sshd, …) and groups every running process under its owning app.
+
 | Page | Purpose |
 |---|---|
-| `/` | Overview, top processes, recent alerts |
-| `/processes` | Searchable process explorer |
-| `/processes/{pid}` | Process detail, ports, ancestry, notes, risk signals |
-| `/duplicates` | Duplicate review workflow |
+| `/` | App-grouped process view + top CPU / RAM / Outbound cards |
+| `/top` | htop-style resource leaderboard, auto-refreshing every 3s, sortable by CPU · RAM · Outbound · Restarts · Suspicion |
+| `/processes` | Searchable, filterable process explorer (text search, suspicious, duplicates, group-by-app) |
+| `/processes/{pid}` | Process detail — ports, clickable ancestry, status badges, operator notes, [KILL] button |
+| `/suggestions` | Safety-tiered kill candidates · Tier 1 (zombies, abandoned orphans) · Tier 2 (idle user-owned processes). Never auto-killed. |
+| `/duplicates` | Duplicate group review with per-member detail and `[ kill N dupes, keep oldest ]` bulk action |
 | `/suspicious` | Suspicious process review |
-| `/ports` | Port exposure analysis |
-| `/alerts` | Alert timeline and acknowledgements |
+| `/ports` | Port exposure with client-side filtering by port / process / public-vs-local |
+| `/alerts` | Alert timeline with inline acknowledge |
 | `/capabilities/view` | Runtime capability overview |
+
+**Killing things from the UI**
+
+| Action | Where | Behavior |
+|---|---|---|
+| Kill one process | `[×]` button on any row, or `[KILL]` on `/processes/{pid}` | Browser confirm → SIGTERM → inline `✓` feedback |
+| Kill an entire app | `[ kill app ]` next to each app group on `/` | Confirms, then SIGTERMs every process in that group |
+| Kill duplicates, keep oldest | `[ kill N dupes, keep oldest ]` on `/duplicates` | Keeps the lowest `start_time` member alive |
+| Suggested cleanup | `[×]` on `/suggestions` rows | Tier 2 confirm dialog includes the reason so you read before clicking |
+
+Suggestions never include PID 1, kernel threads, system services (`sshd`, `cron`, `dbus`, `polkit`, `snapd`, `systemd-*`, `vmtoolsd`, `fail2ban`, etc.), root-owned processes, anything with a listening port, or anything with active outbound connections. The full protect list lives in `app/web/suggestions.py`.
+
+**Hover tooltips**
+
+Every cryptic column header and status badge (`OUT`, `RST`, `SUSP`, `DUP`, `ZOMBIE`, `ORPHAN`, `DELETED-EXE`, `CRIT`, `WARN`, `OK`, …) has a hover tooltip explaining what it means. Dotted underline = explanation available.
 
 **Keyboard shortcuts**
 
 | Key | Action |
 |---|---|
-| `p` | Processes |
+| `g` | Home (grouped view) |
 | `d` | Duplicates |
-| `a` | Alerts |
 
 ---
 
 ## REST API
 
-| Endpoint | Purpose |
-|---|---|
-| `GET /health` | Basic health |
-| `GET /health/score` | Degraded-mode score |
-| `GET /metrics` | Runtime, scan, DB, and host metrics |
-| `GET /stats` | Process, duplicate, alert counts |
-| `GET /capabilities` | Runtime capability flags |
-| `GET /api/processes` | Paginated process list |
-| `GET /api/processes/{pid}` | Process detail |
-| `GET /api/duplicates` | Duplicate groups |
-| `GET /api/ports` | Port map |
-| `GET /api/alerts` | Active alerts |
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/health` | GET | Basic health |
+| `/health/score` | GET | Degraded-mode score |
+| `/metrics` | GET | Runtime, scan, DB, and host metrics |
+| `/stats` | GET | Process, duplicate, alert counts |
+| `/capabilities` | GET | Runtime capability flags |
+| `/api/processes` | GET | Paginated process list (`?q=`, `?suspicious=`, `?duplicates=`) |
+| `/api/processes/{pid}` | GET | Process detail |
+| `/api/processes/{pid}/kill` | POST | SIGTERM a single process |
+| `/api/apps/{name}/kill` | POST | SIGTERM every process belonging to a detected app/service |
+| `/api/process-tree` | GET | Process hierarchy with parent-child relationships |
+| `/api/duplicates` | GET | Duplicate groups |
+| `/api/duplicates/{id}/resolve` | POST | Mark a duplicate group as reviewed |
+| `/api/duplicates/{id}/kill-extras` | POST | Kill all duplicates in a group except the oldest, returns HTML snippet |
+| `/api/ports` | GET | Port map |
+| `/api/alerts` | GET | Active alerts |
+| `/api/alerts/{id}/resolve` | POST | Acknowledge / resolve an alert |
+| `/partials/process-table` | GET | HTMX partial: live process table |
+| `/partials/top-table` | GET | HTMX partial: resource leaderboard rows (`?sort=cpu|ram|out|rst|susp`) |
+| `/partials/nav-counts` | GET | HTMX partial: live alert badge for the nav bar |
+| `/partials/stats-cards` | GET | HTMX partial: scan-time / DB-size metric cards |
 
 ---
 
@@ -622,6 +653,15 @@ note: intentional blue/green overlap during deploy window
 
 ## Roadmap
 
+Recently shipped:
+
+- [x] App auto-detection (groups processes by `/home/*/apps/`, `/opt/`, `/srv/`, systemd unit, or well-known service binary)
+- [x] One-click bulk kill: per app, per duplicate group (keep oldest), per process
+- [x] htop-style `/top` page with live sort by CPU / RAM / Outbound / Restarts / Suspicion
+- [x] Safe-to-close suggestions with explicit protect list and two safety tiers
+- [x] Hover tooltips on every cryptic column and badge
+- [x] DevOps-styled UI: monospace data, color-coded status, dense tables, friendly process labels (`uvicorn (web.app:app)`, `gunicorn (run:app)`, …)
+
 Near-term focus:
 
 - [ ] Linux VPS validation on real Ubuntu / Debian hosts
@@ -629,7 +669,6 @@ Near-term focus:
 - [ ] Persistent duplicate allowlists
 - [ ] Alert suppression across daemon restarts
 - [ ] Process trend sparklines
-- [ ] Dashboard polish
 - [ ] Install and packaging hardening
 
 Non-goals: Kubernetes orchestration · distributed monitoring · enterprise SaaS · React frontend · generic metrics sprawl.

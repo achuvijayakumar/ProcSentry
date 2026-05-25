@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="mb-4 flex items-baseline justify-between flex-wrap gap-2">
+  <h1 class="font-mono text-xs text-zinc-500 uppercase tracking-widest">// safe to close</h1>
+  <div class="font-mono text-xs text-zinc-500">
+    user: <span class="text-cyan-400">{{ current_user or 'unknown' }}</span>
+    {% if duplicate_count > 0 %}· <a href="/duplicates" class="text-amber-400 hover:underline">{{ duplicate_count }} duplicate PIDs (see /duplicates)</a>{% endif %}
+  </div>
+</div>
+
+<div class="mb-5 rounded border border-zinc-800 bg-zinc-900 p-3 font-mono text-xs text-zinc-400">
+  <div class="text-zinc-300 mb-1">heuristic — verify before clicking</div>
+  Suggestions are <strong class="text-zinc-200">never</strong> auto-killed. ProcSentry will not suggest
+  closing system services, root-owned processes, or anything serving traffic. Read the
+  <span class="text-amber-300">reason</span> on each row before pressing <span class="text-red-400">[×]</span>.
+</div>
+
+{% if tier1 %}
+<section class="mb-5">
+  <h2 class="font-mono text-[10px] text-green-500 uppercase tracking-widest mb-2"><span class="ps-tip ps-tip-badge" data-tip="Tier 1: almost-zero false-positive risk. Zombies (already dead) and abandoned orphans with no listening port. Safe to click without checking." data-tip-pos="right">// tier 1 · very safe</span></h2>
+  <div class="rounded border border-green-900 bg-zinc-900 overflow-hidden">
+    <table class="min-w-full font-mono text-xs">
+      <thead class="bg-zinc-950/40 text-zinc-600 text-[10px] uppercase tracking-wider">
+        <tr>
+          <th class="px-3 py-1 text-left w-20">PID</th>
+          <th class="px-2 py-1 text-left">Process</th>
+          <th class="px-2 py-1 text-left">Reason</th>
+          <th class="px-2 py-1 text-right w-16">RAM</th>
+          <th class="px-2 py-1 text-right w-14"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-zinc-800/60">
+        {% for s in tier1 %}
+        <tr class="hover:bg-zinc-800/50">
+          <td class="px-3 py-1 text-cyan-400"><a href="/processes/{{ s.pid }}" class="hover:underline">{{ s.pid }}</a></td>
+          <td class="px-2 py-1 text-zinc-200">
+            {% if s.project %}<span class="text-amber-300">{{ s.project }}</span> · {% endif %}{{ s.friendly_label }}
+          </td>
+          <td class="px-2 py-1 text-zinc-400">{{ s.reason }}</td>
+          <td class="px-2 py-1 text-right text-zinc-500">{{ "%.0f"|format(s.memory_mb) }}M</td>
+          <td class="px-2 py-1 text-right">
+            <span id="kill-result-t1-{{ s.pid }}"></span>
+            <button
+              class="text-red-500 border border-red-800 hover:border-red-500 px-1.5 py-0.5 rounded transition-colors"
+              hx-post="/api/processes/{{ s.pid }}/kill"
+              hx-confirm="Kill PID {{ s.pid }} ({{ s.name }})? Reason: {{ s.reason }}"
+              hx-on::after-request="document.getElementById('kill-result-t1-{{ s.pid }}').textContent='✓'; this.disabled=true; this.classList.add('opacity-40')">
+              [×]
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if tier2 %}
+<section class="mb-5">
+  <h2 class="font-mono text-[10px] text-amber-500 uppercase tracking-widest mb-2"><span class="ps-tip ps-tip-badge" data-tip="Tier 2: idle processes owned by you with no listening port, no outbound connections, no recent restarts, alive >30 minutes. Read the reason before killing — could be something you forgot is running, OR something you wanted to keep idle." data-tip-pos="right">// tier 2 · probably safe · read reason first</span></h2>
+  <div class="rounded border border-amber-900 bg-zinc-900 overflow-hidden">
+    <table class="min-w-full font-mono text-xs">
+      <thead class="bg-zinc-950/40 text-zinc-600 text-[10px] uppercase tracking-wider">
+        <tr>
+          <th class="px-3 py-1 text-left w-20">PID</th>
+          <th class="px-2 py-1 text-left">Process</th>
+          <th class="px-2 py-1 text-left">Reason</th>
+          <th class="px-2 py-1 text-right w-16">RAM</th>
+          <th class="px-2 py-1 text-right w-14"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-zinc-800/60">
+        {% for s in tier2 %}
+        <tr class="hover:bg-zinc-800/50">
+          <td class="px-3 py-1 text-cyan-400"><a href="/processes/{{ s.pid }}" class="hover:underline">{{ s.pid }}</a></td>
+          <td class="px-2 py-1 text-zinc-200">
+            {% if s.project %}<span class="text-amber-300">{{ s.project }}</span> · {% endif %}{{ s.friendly_label }}
+          </td>
+          <td class="px-2 py-1 text-zinc-400">{{ s.reason }}</td>
+          <td class="px-2 py-1 text-right text-zinc-500">{{ "%.0f"|format(s.memory_mb) }}M</td>
+          <td class="px-2 py-1 text-right">
+            <span id="kill-result-t2-{{ s.pid }}"></span>
+            <button
+              class="text-red-500 border border-red-800 hover:border-red-500 px-1.5 py-0.5 rounded transition-colors"
+              hx-post="/api/processes/{{ s.pid }}/kill"
+              hx-confirm="⚠ Kill PID {{ s.pid }} ({{ s.name }})?&#10;&#10;Reason: {{ s.reason }}&#10;&#10;You confirmed you reviewed this."
+              hx-on::after-request="document.getElementById('kill-result-t2-{{ s.pid }}').textContent='✓'; this.disabled=true; this.classList.add('opacity-40')">
+              [×]
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if not tier1 and not tier2 %}
+<div class="rounded border border-zinc-800 bg-zinc-900 p-6 font-mono text-sm text-green-500 text-center">
+  ✓ Nothing safe to suggest closing right now.
+  <div class="mt-2 text-xs text-zinc-500">All running processes look active, are serving traffic, or are system-managed.</div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -88,6 +88,19 @@ def health_score(request: Request) -> dict[str, object]:
     }
 
 
+@router.get("/partials/nav-counts", response_class=HTMLResponse)
+def nav_counts(request: Request) -> HTMLResponse:
+    """Return live alert/suspicious count badges for the nav bar."""
+    s = request.app.state.repository.stats()
+    alerts = s.get("alerts", 0)
+    suspicious = s.get("suspicious", 0)
+    return templates.TemplateResponse(
+        request,
+        "partials/nav_counts.html",
+        {"alert_count": alerts, "suspicious_count": suspicious},
+    )
+
+
 @router.get("/capabilities/view", response_class=HTMLResponse)
 def capabilities_page(request: Request) -> HTMLResponse:
     """Render capability overview."""

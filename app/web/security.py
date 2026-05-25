@@ -51,7 +51,7 @@ def install_security(app: FastAPI, settings: Settings) -> None:
 
     @app.get("/login", response_class=HTMLResponse)
     def login_page(request: Request) -> HTMLResponse:
-        return templates.TemplateResponse("login.html", {"request": request, "error": None})
+        return templates.TemplateResponse(request, "login.html", {"error": None})
 
     @app.post("/login")
     async def login(request: Request) -> Response:
@@ -60,7 +60,7 @@ def install_security(app: FastAPI, settings: Settings) -> None:
         password = str(form.get("password", ""))
         if not _credentials_match(username, password, settings):
             return templates.TemplateResponse(
-                "login.html", {"request": request, "error": "Invalid credentials"}, status_code=401
+                request, "login.html", {"error": "Invalid credentials"}, status_code=401
             )
         token = _sign_session(username, settings)
         response = RedirectResponse("/", status_code=303)

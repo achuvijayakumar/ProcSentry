@@ -1,19 +1,28 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 class="mb-4 text-xl font-semibold">Alerts</h1>
-<div class="overflow-hidden rounded border border-zinc-800">
+<h1 class="mb-4 font-mono text-xs text-zinc-500 uppercase tracking-widest">// alerts</h1>
+<div class="overflow-hidden rounded border border-zinc-800 divide-y divide-zinc-800">
   {% for alert in alerts %}
-  <div class="border-b border-zinc-800 bg-zinc-900 p-3 last:border-b-0">
-    <div class="text-sm"><span class="font-medium">{{ alert.severity }}</span> {{ alert.type }} / {{ alert.category }}</div>
-    <div>{{ alert.message }}</div>
-    <div class="text-xs text-zinc-500">{{ alert.created_at }}</div>
-    <button class="mt-2 rounded bg-zinc-700 px-3 py-1 text-xs"
-      hx-post="/api/alerts/{{ alert.id }}/resolve"
-      hx-target="closest div"
-      hx-swap="outerHTML">Acknowledge</button>
+  <div id="alert-{{ alert.id }}" class="bg-zinc-900 px-3 py-2.5 {% if alert.severity == 'CRITICAL' %}border-l-2 border-l-red-600{% else %}border-l-2 border-l-amber-600{% endif %}">
+    <div class="flex items-start justify-between gap-4">
+      <div class="min-w-0">
+        <div class="font-mono text-xs flex items-center gap-2">
+          <span class="{% if alert.severity == 'CRITICAL' %}text-red-400{% else %}text-amber-400{% endif %} font-bold">{{ alert.severity }}</span>
+          <span class="text-zinc-600">{{ alert.type }}/{{ alert.category }}</span>
+        </div>
+        <div class="mt-1 font-mono text-xs text-zinc-200">{{ alert.message }}</div>
+        <div class="mt-1 font-mono text-xs text-zinc-600">{{ alert.created_at }}</div>
+      </div>
+      <button
+        class="shrink-0 font-mono text-xs border border-zinc-700 text-zinc-400 hover:border-green-700 hover:text-green-400 px-2 py-1 rounded transition-colors"
+        hx-post="/api/alerts/{{ alert.id }}/resolve"
+        hx-on::after-request="document.getElementById('alert-{{ alert.id }}').remove()">
+        [ack]
+      </button>
+    </div>
   </div>
   {% else %}
-  <div class="bg-zinc-900 p-3 text-sm text-zinc-400">No active alerts</div>
+  <div class="bg-zinc-900 p-4 font-mono text-xs text-green-500">— no active alerts —</div>
   {% endfor %}
 </div>
 {% endblock %}

@@ -3,18 +3,23 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ProcSentry Login</title>
+    <title>ProcSentry · login</title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body class="flex min-h-screen items-center justify-center bg-zinc-950 px-4 text-zinc-100">
+  <body class="flex min-h-screen items-center justify-center bg-zinc-950 px-4 text-zinc-100 font-mono">
     <form class="w-full max-w-sm rounded border border-zinc-800 bg-zinc-900 p-6" method="post" action="/login">
-      <h1 class="mb-4 text-xl font-semibold">ProcSentry</h1>
-      {% if error %}<div class="mb-3 rounded bg-red-500 px-3 py-2 text-sm text-white">{{ error }}</div>{% endif %}
-      <label class="mb-2 block text-sm text-zinc-300">Username</label>
-      <input class="mb-3 w-full rounded border border-zinc-700 bg-zinc-950 px-3 py-2" name="username" autocomplete="username">
-      <label class="mb-2 block text-sm text-zinc-300">Password</label>
-      <input class="mb-4 w-full rounded border border-zinc-700 bg-zinc-950 px-3 py-2" name="password" type="password" autocomplete="current-password">
-      <button class="w-full rounded bg-cyan-700 px-3 py-2 font-medium">Sign in</button>
+      <div class="mb-1 text-xs text-zinc-500 uppercase tracking-widest">// authenticate</div>
+      <h1 class="mb-5 text-2xl font-bold text-green-400">ProcSentry</h1>
+      {% if error %}
+      <div class="mb-4 rounded border border-red-700 bg-red-950 px-3 py-2 text-xs text-red-400">
+        <span class="font-bold">[ERR]</span> {{ error }}
+      </div>
+      {% endif %}
+      <label class="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">username</label>
+      <input class="mb-4 w-full rounded border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-cyan-700 focus:outline-none" name="username" autocomplete="username" autofocus>
+      <label class="mb-1.5 block text-xs uppercase tracking-wider text-zinc-500">password</label>
+      <input class="mb-5 w-full rounded border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-cyan-700 focus:outline-none" name="password" type="password" autocomplete="current-password">
+      <button class="w-full rounded border border-cyan-700 bg-cyan-950 px-3 py-2 text-sm font-bold text-cyan-400 hover:bg-cyan-900 transition-colors">[ sign in ]</button>
     </form>
   </body>
 </html>

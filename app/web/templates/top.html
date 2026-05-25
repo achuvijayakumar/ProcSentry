@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% set tabs = [
+  ('cpu',  'CPU',       'Sort by CPU usage (percent of one core)'),
+  ('ram',  'RAM',       'Sort by resident memory (RSS)'),
+  ('out',  'Outbound',  'Sort by outbound TCP/UDP connection count'),
+  ('rst',  'Restarts',  'Sort by recent restart count'),
+  ('susp', 'Suspicion', 'Sort by suspicion score (0–100)'),
+] %}
+
+<div class="mb-3 flex items-center justify-between flex-wrap gap-3">
+  <h1 class="font-mono text-xs text-zinc-500 uppercase tracking-widest">// top processes · sorted by {{ sort }}</h1>
+  <div class="font-mono text-xs flex items-center gap-1">
+    {% for k, label, tip in tabs %}
+    <a href="/top?sort={{ k }}"
+       class="ps-tip ps-tip-badge px-2 py-1 rounded border {% if sort == k %}border-cyan-700 text-cyan-400 bg-cyan-950{% else %}border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200{% endif %} transition-colors"
+       data-tip="{{ tip }}" data-tip-pos="bottom">{{ label }}</a>
+    {% endfor %}
+    <span class="text-zinc-600 ml-2">· auto-refreshes every 3s</span>
+  </div>
+</div>
+
+<div class="rounded border border-zinc-800 bg-zinc-900 overflow-hidden">
+  <table class="min-w-full font-mono text-xs">
+    <thead class="bg-zinc-950/40 text-zinc-600 text-[10px] uppercase tracking-wider">
+      <tr>
+        <th class="px-3 py-1 text-left w-12">#</th>
+        <th class="px-2 py-1 text-left w-20"><span class="ps-tip" data-tip="Process ID." data-tip-pos="bottom">PID</span></th>
+        <th class="px-2 py-1 text-left"><span class="ps-tip" data-tip="Detected app or service this process belongs to." data-tip-pos="bottom">App</span></th>
+        <th class="px-2 py-1 text-left">Command</th>
+        <th class="px-2 py-1 text-left w-20"><span class="ps-tip" data-tip="Owner of the process." data-tip-pos="bottom">User</span></th>
+        <th class="px-2 py-1 text-right w-16"><span class="ps-tip" data-tip="CPU %." data-tip-pos="bottom">CPU</span></th>
+        <th class="px-2 py-1 text-right w-16"><span class="ps-tip" data-tip="Resident memory." data-tip-pos="bottom">RAM</span></th>
+        <th class="px-2 py-1 text-right w-12"><span class="ps-tip" data-tip="Outbound connections." data-tip-pos="bottom">Out</span></th>
+        <th class="px-2 py-1 text-right w-12"><span class="ps-tip" data-tip="Restart count." data-tip-pos="bottom">Rst</span></th>
+        <th class="px-2 py-1 text-right w-12"><span class="ps-tip" data-tip="Suspicion 0–100." data-tip-pos="bottom">Susp</span></th>
+        <th class="px-2 py-1 text-right w-12"></th>
+      </tr>
+    </thead>
+    <tbody id="top-rows"
+           hx-get="/partials/top-table?sort={{ sort }}"
+           hx-trigger="every 3s"
+           hx-swap="innerHTML">
+      {% include "partials/top_rows.html" %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

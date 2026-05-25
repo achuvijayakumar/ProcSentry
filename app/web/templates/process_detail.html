@@ -1,45 +1,107 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 class="text-xl font-semibold">{{ proc.name }} <span class="text-zinc-400">PID {{ proc.pid }}</span></h1>
-<div class="mt-3 flex flex-wrap gap-2 text-xs">
-  {% if proc.suspicious_score > 0 %}<span class="rounded bg-red-500 px-2 py-1 font-semibold text-white">suspicious {{ proc.suspicious_score }}</span>{% endif %}
-  {% if proc.duplicate_score > 0 %}<span class="rounded bg-amber-500 px-2 py-1 font-semibold text-zinc-950">duplicate {{ proc.duplicate_score }}</span>{% endif %}
-  {% if proc.restart_count > 0 %}<span class="rounded bg-cyan-600 px-2 py-1 font-semibold text-white">restarts {{ proc.restart_count }}</span>{% endif %}
-  {% if proc.executable_deleted %}<span class="rounded bg-red-700 px-2 py-1 font-semibold text-white">deleted executable</span>{% endif %}
-  {% if proc.is_zombie %}<span class="rounded bg-zinc-600 px-2 py-1 font-semibold text-white">zombie</span>{% endif %}
-  {% if proc.is_orphan %}<span class="rounded bg-zinc-600 px-2 py-1 font-semibold text-white">orphan</span>{% endif %}
-  {% if not proc.suspicious_score and not proc.duplicate_score and not proc.restart_count and not proc.executable_deleted and not proc.is_zombie %}
-  <span class="rounded bg-emerald-600 px-2 py-1 font-semibold text-white">no active signals</span>
-  {% endif %}
+<div class="flex flex-wrap items-start gap-4 justify-between">
+  <div>
+    {% if project %}
+    <div class="font-mono text-xs text-amber-300 uppercase tracking-wider mb-1">{{ project }}</div>
+    {% endif %}
+    <h1 class="font-mono text-xl font-semibold text-zinc-100">{{ friendly_label or proc.name }} <span class="text-zinc-500">· PID {{ proc.pid }}</span></h1>
+    <div class="mt-2 flex flex-wrap gap-2 text-xs font-mono">
+      {% if proc.suspicious_score > 0 %}<span class="ps-tip ps-tip-badge rounded border border-red-700 bg-red-950 px-2 py-0.5 text-red-400" data-tip="Suspicion score 0–100. Built from signals like deleted executable, high-entropy random name, hidden binary path, or anomalous behavior. >50 = critical.">SUSP:{{ proc.suspicious_score }}</span>{% endif %}
+      {% if proc.duplicate_score > 0 %}<span class="ps-tip ps-tip-badge rounded border border-amber-700 bg-amber-950 px-2 py-0.5 text-amber-400" data-tip="Duplicate confidence 0–99. 99 = exact match (same exe + cwd + normalized args). Lower = fuzzy match.">DUP:{{ proc.duplicate_score }}</span>{% endif %}
+      {% if proc.restart_count > 0 %}<span class="ps-tip ps-tip-badge rounded border border-cyan-700 bg-cyan-950 px-2 py-0.5 text-cyan-400" data-tip="Number of recent restarts. >0 means this process has died and respawned — possible crash loop.">RST:{{ proc.restart_count }}</span>{% endif %}
+      {% if proc.executable_deleted %}<span class="ps-tip ps-tip-badge rounded border border-red-800 bg-red-950 px-2 py-0.5 text-red-500" data-tip="The binary on disk has been deleted while the process is still running. Either a routine package upgrade (restart the service) or malware hiding its tracks.">DELETED-EXE</span>{% endif %}
+      {% if proc.is_zombie %}<span class="ps-tip ps-tip-badge rounded border border-zinc-600 bg-zinc-900 px-2 py-0.5 text-zinc-400" data-tip="Zombie: the process already exited but its parent hasn't called wait() to reap it. Harmless but takes a PID slot.">ZOMBIE</span>{% endif %}
+      {% if proc.is_orphan %}<span class="ps-tip ps-tip-badge rounded border border-zinc-600 bg-zinc-900 px-2 py-0.5 text-zinc-400" data-tip="Orphan: original parent died, so init (PID 1) adopted it. Often a stray background process safe to kill.">ORPHAN</span>{% endif %}
+      {% if not proc.suspicious_score and not proc.duplicate_score and not proc.restart_count and not proc.executable_deleted and not proc.is_zombie %}
+      <span class="ps-tip ps-tip-badge rounded border border-green-800 bg-green-950 px-2 py-0.5 text-green-400" data-tip="No active signals — process looks healthy.">OK</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="flex items-center gap-2">
+    <span id="kill-status-{{ proc.pid }}" class="font-mono text-xs text-red-400"></span>
+    <button
+      class="font-mono text-sm border border-red-700 text-red-400 hover:bg-red-950 px-3 py-1.5 rounded transition-colors"
+      hx-post="/api/processes/{{ proc.pid }}/kill"
+      hx-confirm="Kill {{ proc.name }} (PID {{ proc.pid }})?"
+      hx-on::after-request="document.getElementById('kill-status-{{ proc.pid }}').textContent='SIGTERM sent'; this.disabled=true; this.classList.add('opacity-40')">
+      [KILL]
+    </button>
+  </div>
 </div>
-<dl class="mt-4 grid gap-3 md:grid-cols-2">
-  <div class="rounded border border-zinc-800 bg-zinc-900 p-3"><dt class="text-xs text-zinc-400">Command</dt><dd class="break-all text-sm">{{ proc.cmdline.replace('\0', ' ') }}</dd></div>
-  <div class="rounded border border-zinc-800 bg-zinc-900 p-3"><dt class="text-xs text-zinc-400">Executable</dt><dd class="break-all text-sm">{{ proc.executable or "" }}</dd></div>
-  <div class="rounded border border-zinc-800 bg-zinc-900 p-3"><dt class="text-xs text-zinc-400">Working Directory</dt><dd class="break-all text-sm">{{ proc.cwd or "" }}</dd></div>
-  <div class="rounded border border-zinc-800 bg-zinc-900 p-3"><dt class="text-xs text-zinc-400">User</dt><dd>{{ proc.user or "" }}</dd></div>
-  <div class="rounded border border-zinc-800 bg-zinc-900 p-3"><dt class="text-xs text-zinc-400">Outbound Connections</dt><dd>{{ proc.outbound_connections }}</dd></div>
-  <div class="rounded border border-zinc-800 bg-zinc-900 p-3"><dt class="text-xs text-zinc-400">Service</dt><dd>{{ proc.systemd_unit or proc.service_manager or "manual" }}</dd></div>
-  <div class="rounded border border-zinc-800 bg-zinc-900 p-3"><dt class="text-xs text-zinc-400">Restarts Observed</dt><dd>{{ proc.restart_count }}</dd></div>
+
+<dl class="mt-5 grid gap-2 md:grid-cols-2">
+  <div class="rounded border border-zinc-800 bg-zinc-900 p-3">
+    <dt class="text-xs text-zinc-500 uppercase tracking-wider">Command</dt>
+    <dd class="mt-1 break-all font-mono text-xs text-zinc-200">{{ proc.cmdline.replace('\0', ' ') }}</dd>
+  </div>
+  <div class="rounded border border-zinc-800 bg-zinc-900 p-3">
+    <dt class="text-xs text-zinc-500 uppercase tracking-wider">Executable</dt>
+    <dd class="mt-1 break-all font-mono text-xs {% if proc.executable_deleted %}text-red-400{% else %}text-zinc-200{% endif %}">{{ proc.executable or "—" }}</dd>
+  </div>
+  <div class="rounded border border-zinc-800 bg-zinc-900 p-3">
+    <dt class="text-xs text-zinc-500 uppercase tracking-wider">Working Directory</dt>
+    <dd class="mt-1 break-all font-mono text-xs text-zinc-200">{{ proc.cwd or "—" }}</dd>
+  </div>
+  <div class="rounded border border-zinc-800 bg-zinc-900 p-3">
+    <dt class="text-xs text-zinc-500 uppercase tracking-wider">User</dt>
+    <dd class="mt-1 font-mono text-xs text-zinc-200">{{ proc.user or "—" }}</dd>
+  </div>
+  <div class="rounded border border-zinc-800 bg-zinc-900 p-3">
+    <dt class="text-xs text-zinc-500 uppercase tracking-wider">Outbound Connections</dt>
+    <dd class="mt-1 font-mono text-xs {% if proc.outbound_connections > 50 %}text-red-400{% elif proc.outbound_connections > 15 %}text-amber-400{% else %}text-zinc-200{% endif %}">{{ proc.outbound_connections }}</dd>
+  </div>
+  <div class="rounded border border-zinc-800 bg-zinc-900 p-3">
+    <dt class="text-xs text-zinc-500 uppercase tracking-wider">Service</dt>
+    <dd class="mt-1 font-mono text-xs text-zinc-200">{{ proc.systemd_unit or proc.service_manager or "manual" }}</dd>
+  </div>
+  <div class="rounded border border-zinc-800 bg-zinc-900 p-3">
+    <dt class="text-xs text-zinc-500 uppercase tracking-wider">Restarts Observed</dt>
+    <dd class="mt-1 font-mono text-xs {% if proc.restart_count > 5 %}text-red-400{% elif proc.restart_count > 0 %}text-amber-400{% else %}text-zinc-200{% endif %}">{{ proc.restart_count }}</dd>
+  </div>
+  <div class="rounded border border-zinc-800 bg-zinc-900 p-3">
+    <dt class="text-xs text-zinc-500 uppercase tracking-wider">Container</dt>
+    <dd class="mt-1 font-mono text-xs text-zinc-200">{{ proc.container_id or "—" }}</dd>
+  </div>
 </dl>
-<h2 class="mt-6 text-lg font-semibold">Ports</h2>
-<div class="mt-2 rounded border border-zinc-800 bg-zinc-900 p-3 text-sm">
-  {% for port in ports %}<div>{{ port.protocol }} {{ port.address }}:{{ port.port }}</div>{% else %}<div class="text-zinc-400">No listening ports</div>{% endfor %}
-</div>
-<h2 class="mt-6 text-lg font-semibold">Process Tree</h2>
-<div class="mt-2 rounded border border-zinc-800 bg-zinc-900 p-3 text-sm">
-  {% for ancestor in proc.ancestry_json.strip('[]').split(',') if proc.ancestry_json != '[]' %}
-  <div class="text-zinc-300">ancestor PID {{ ancestor.strip() }}</div>
+
+<h2 class="mt-6 font-mono text-xs text-zinc-500 uppercase tracking-widest">// Listening Ports</h2>
+<div class="mt-2 rounded border border-zinc-800 bg-zinc-900 p-3">
+  {% for port in ports %}
+  <div class="font-mono text-xs text-zinc-200 py-0.5">
+    <span class="text-cyan-400">{{ port.port }}</span>
+    <span class="text-zinc-500">/{{ port.protocol }}</span>
+    <span class="text-zinc-400 ml-2">{{ port.address }}</span>
+  </div>
   {% else %}
-  <div class="text-zinc-400">No ancestry available</div>
+  <div class="font-mono text-xs text-zinc-500">— no listening ports —</div>
   {% endfor %}
 </div>
-<h2 class="mt-6 text-lg font-semibold">Operator Notes</h2>
-<div id="process-notes">
+
+<h2 class="mt-6 font-mono text-xs text-zinc-500 uppercase tracking-widest">// Process Ancestry</h2>
+<div class="mt-2 rounded border border-zinc-800 bg-zinc-900 p-3 font-mono text-xs">
+  {% if ancestry_pids %}
+  <div class="flex flex-wrap items-center gap-1 text-zinc-300">
+    {% for pid in ancestry_pids %}
+    <a href="/processes/{{ pid }}" class="text-cyan-400 hover:underline">{{ pid }}</a>
+    {% if not loop.last %}<span class="text-zinc-600">→</span>{% endif %}
+    {% endfor %}
+    <span class="text-zinc-600">→</span>
+    <span class="text-green-400">{{ proc.pid }}</span>
+    <span class="text-zinc-500 ml-1">(this)</span>
+  </div>
+  {% else %}
+  <div class="text-zinc-500">— no ancestry available —</div>
+  {% endif %}
+</div>
+
+<h2 class="mt-6 font-mono text-xs text-zinc-500 uppercase tracking-widest">// Operator Notes</h2>
+<div id="process-notes" class="mt-2">
   {% include "partials/process_notes.html" %}
 </div>
 <form class="mt-3 flex flex-col gap-2 md:flex-row" hx-post="/processes/{{ proc.pid }}/notes" hx-target="#process-notes" hx-swap="innerHTML">
-  <input class="rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm" name="tag" placeholder="tag">
-  <input class="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm" name="note" placeholder="operator note">
-  <button class="rounded bg-cyan-700 px-3 py-2 text-sm">Add note</button>
+  <input class="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 placeholder-zinc-600" name="tag" placeholder="tag">
+  <input class="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 placeholder-zinc-600" name="note" placeholder="operator note">
+  <button class="rounded border border-cyan-700 text-cyan-400 hover:bg-cyan-950 px-3 py-1.5 font-mono text-xs transition-colors">+ note</button>
 </form>
 {% endblock %}

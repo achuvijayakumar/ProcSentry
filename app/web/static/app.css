@@ -1,2 +1,66 @@
 body { color-scheme: dark; }
 
+/* ---------- Tooltips ----------
+   Usage:
+     <span class="ps-tip" data-tip="Outbound TCP connections count">Out</span>
+   Optional: data-tip-pos="top|bottom|left|right" (default: top)
+*/
+.ps-tip {
+  position: relative;
+  cursor: help;
+  text-decoration: underline dotted rgba(161, 161, 170, 0.5);
+  text-underline-offset: 3px;
+}
+.ps-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  z-index: 50;
+  background: #0a0a0c;
+  color: #d4d4d8;
+  border: 1px solid #3f3f46;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 6px 9px;
+  border-radius: 4px;
+  white-space: pre-line;
+  width: max-content;
+  max-width: 280px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+}
+.ps-tip:hover::after,
+.ps-tip:focus::after {
+  opacity: 1;
+}
+
+/* Default: above */
+.ps-tip::after {
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.ps-tip[data-tip-pos="bottom"]::after {
+  top: calc(100% + 6px);
+  bottom: auto;
+}
+.ps-tip[data-tip-pos="right"]::after {
+  left: calc(100% + 6px);
+  bottom: auto;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.ps-tip[data-tip-pos="left"]::after {
+  right: calc(100% + 6px);
+  left: auto;
+  bottom: auto;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* When the tooltip target is a small badge, drop the dotted underline. */
+.ps-tip-badge {
+  text-decoration: none;
+}
