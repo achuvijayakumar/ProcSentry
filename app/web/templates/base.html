@@ -25,24 +25,47 @@
       [WARN] Windows development mode: Linux procfs, cgroup, systemd, deleted-executable, and namespace intelligence are disabled.
     </div>
     {% endif %}
+    {%- set _path = request.url.path -%}
+    {%- macro nav_link(href, label, idle="text-zinc-400", active_text="text-zinc-50", accent="bg-green-400", exact=False, extra_class="") -%}
+      {%- if (exact and _path == href) or (not exact and (_path == href or _path.startswith(href ~ "/"))) -%}
+        {%- set is_active = True -%}
+      {%- else -%}
+        {%- set is_active = False -%}
+      {%- endif -%}
+      <a aria-current="{{ 'page' if is_active else 'false' }}"
+         class="relative px-2 py-1 rounded transition-colors {{ extra_class }}
+                {% if is_active %}{{ active_text }} bg-zinc-800/70 font-semibold
+                                   after:absolute after:left-2 after:right-2 after:-bottom-[9px]
+                                   after:h-[2px] after:rounded-full after:{{ accent }}
+                {% else %}{{ idle }} hover:text-zinc-100 hover:bg-zinc-800{% endif %}"
+         href="{{ href }}">{{ caller() if caller is defined else label }}</a>
+    {%- endmacro -%}
     <nav class="border-b border-zinc-800 bg-zinc-900">
       <div class="mx-auto flex max-w-7xl items-center gap-1 px-4 py-2 text-xs font-mono">
         <a class="font-bold text-green-400 tracking-tight mr-4" href="/">ProcSentry</a>
-        <a class="text-zinc-300 hover:text-zinc-100 px-2 py-1 rounded hover:bg-zinc-800 transition-colors" href="/">home</a>
-        <a class="text-zinc-400 hover:text-zinc-100 px-2 py-1 rounded hover:bg-zinc-800 transition-colors" href="/top">top</a>
-        <a class="text-zinc-400 hover:text-zinc-100 px-2 py-1 rounded hover:bg-zinc-800 transition-colors" href="/processes">processes</a>
-        <a class="text-zinc-400 hover:text-zinc-100 px-2 py-1 rounded hover:bg-zinc-800 transition-colors" href="/suggestions">suggestions</a>
-        <a class="text-zinc-400 hover:text-zinc-100 px-2 py-1 rounded hover:bg-zinc-800 transition-colors" href="/duplicates">duplicates</a>
-        <a class="text-zinc-400 hover:text-zinc-100 px-2 py-1 rounded hover:bg-zinc-800 transition-colors" href="/suspicious">suspicious</a>
-        <a class="text-zinc-400 hover:text-zinc-100 px-2 py-1 rounded hover:bg-zinc-800 transition-colors" href="/ports">ports</a>
-        <a class="text-zinc-400 hover:text-zinc-100 px-2 py-1 rounded hover:bg-zinc-800 transition-colors flex items-center gap-1.5" href="/alerts">
+        {{ nav_link("/",            "home",        idle="text-zinc-300", exact=True) }}
+        {{ nav_link("/top",         "top") }}
+        {{ nav_link("/processes",   "processes") }}
+        {{ nav_link("/suggestions", "suggestions") }}
+        {{ nav_link("/duplicates",  "duplicates") }}
+        {{ nav_link("/suspicious",  "suspicious") }}
+        {{ nav_link("/ports",       "ports") }}
+        {%- set alerts_active = _path == "/alerts" or _path.startswith("/alerts/") -%}
+        <a aria-current="{{ 'page' if alerts_active else 'false' }}"
+           class="relative px-2 py-1 rounded transition-colors flex items-center gap-1.5
+                  {% if alerts_active %}text-zinc-50 bg-zinc-800/70 font-semibold
+                                       after:absolute after:left-2 after:right-2 after:-bottom-[9px]
+                                       after:h-[2px] after:rounded-full after:bg-amber-400
+                  {% else %}text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800{% endif %}"
+           href="/alerts">
           alerts
           <span id="nav-alert-badge"
             hx-get="/partials/nav-counts"
             hx-trigger="load, every 10s"
             hx-swap="outerHTML"></span>
         </a>
-        <a class="text-zinc-500 hover:text-zinc-200 px-2 py-1 rounded hover:bg-zinc-800 transition-colors ml-auto" href="/capabilities/view">caps</a>
+        {{ nav_link("/roast", "roast", idle="text-pink-400", active_text="text-pink-200", accent="bg-pink-400") }}
+        {{ nav_link("/capabilities/view", "caps", idle="text-zinc-500", extra_class="ml-auto") }}
         <span class="text-zinc-600 border border-zinc-800 px-2 py-0.5 rounded ml-2">{{ request.app.state.capabilities.system }}</span>
       </div>
     </nav>

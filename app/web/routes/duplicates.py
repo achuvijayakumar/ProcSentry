@@ -109,6 +109,20 @@ def kill_extras(request: Request, group_id: int) -> HTMLResponse:
         try:
             os.kill(m["pid"], signal.SIGTERM)
             killed.append(m["pid"])
+            try:
+                repository.record_kill(
+                    pid=m["pid"],
+                    name=m["name"],
+                    cmdline=m["cmdline"],
+                    friendly_label=m["friendly_label"],
+                    project=m["project"],
+                    user=m["user"],
+                    cpu_percent=m["cpu_percent"] or 0.0,
+                    memory_mb=m["memory_mb"] or 0.0,
+                    killed_via="duplicates",
+                )
+            except Exception:
+                pass
         except PermissionError:
             failed.append((m["pid"], "perm"))
         except ProcessLookupError:

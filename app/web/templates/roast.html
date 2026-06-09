@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="mb-5 flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <div class="font-mono text-xs text-zinc-500 uppercase tracking-widest">// procsentry wrapped</div>
+    <div class="font-mono text-2xl text-zinc-100 mt-1">your <span class="text-pink-400">{{ days }}-day</span> roast</div>
+  </div>
+  <div class="font-mono text-xs text-zinc-500 text-right">
+    window:
+    <a href="/roast?days=7"  class="{% if days == 7  %}text-pink-400{% else %}text-cyan-500{% endif %} hover:underline">7d</a> ·
+    <a href="/roast?days=30" class="{% if days == 30 %}text-pink-400{% else %}text-cyan-500{% endif %} hover:underline">30d</a> ·
+    <a href="/roast?days=90" class="{% if days == 90 %}text-pink-400{% else %}text-cyan-500{% endif %} hover:underline">90d</a> ·
+    <a href="/roast?days=365" class="{% if days == 365 %}text-pink-400{% else %}text-cyan-500{% endif %} hover:underline">1y</a>
+  </div>
+</div>
+
+{% if empty %}
+<div class="rounded border border-zinc-800 bg-zinc-900 p-8 text-center font-mono text-sm text-zinc-400">
+  no kills logged yet in the last {{ days }} days.<br>
+  <span class="text-zinc-600 text-xs mt-2 block">kill some processes via the dashboard and come back — the roast needs receipts.</span>
+</div>
+{% else %}
+
+{# ---------- The shareable card ---------- #}
+<section id="roast-card" class="rounded-xl border border-pink-500/40 bg-gradient-to-br from-zinc-900 via-zinc-900 to-pink-950/40 p-6 shadow-lg shadow-pink-500/10">
+  <div class="flex items-baseline justify-between mb-4">
+    <div class="font-mono text-[10px] uppercase tracking-[0.3em] text-pink-400">// procsentry wrapped {{ days }}d</div>
+    <div class="font-mono text-[10px] text-zinc-500">{{ total_kills }} kills · {{ unique_offenders }} offenders</div>
+  </div>
+
+  <div class="grid gap-4 md:grid-cols-2">
+    {# Top hog #}
+    <div class="rounded border border-zinc-800 bg-zinc-950/60 p-4">
+      <div class="font-mono text-[10px] uppercase tracking-widest text-amber-300 mb-1">🥇 top hog</div>
+      <div class="font-mono text-lg text-zinc-100 truncate">{{ top_hog.label }}</div>
+      <div class="font-mono text-xs text-zinc-500 mt-1">
+        ate <span class="text-amber-300">{{ "%.1f"|format(top_hog.ram_gb) }} GB-equivalent</span> of RAM across {{ top_hog.count }} kill{{ "s" if top_hog.count != 1 else "" }}
+      </div>
+    </div>
+
+    {# Most killed #}
+    <div class="rounded border border-zinc-800 bg-zinc-950/60 p-4">
+      <div class="font-mono text-[10px] uppercase tracking-widest text-red-400 mb-1">💀 most killed</div>
+      <div class="font-mono text-lg text-zinc-100 truncate">{{ most_killed.label }}</div>
+      <div class="font-mono text-xs text-zinc-500 mt-1">
+        killed <span class="text-red-400">{{ most_killed.count }}</span> time{{ "s" if most_killed.count != 1 else "" }}
+        {% if most_killed.count >= 5 %}— came back every time{% endif %}
+      </div>
+    </div>
+
+    {# Funniest crime #}
+    <div class="rounded border border-zinc-800 bg-zinc-950/60 p-4">
+      <div class="font-mono text-[10px] uppercase tracking-widest text-cyan-400 mb-1">🤡 funniest crime</div>
+      <div class="font-mono text-lg text-zinc-100 truncate">{{ funniest_crime.label }}</div>
+      <div class="font-mono text-xs text-zinc-500 mt-1">
+        was holding <span class="text-cyan-300">{{ "%.2f"|format(funniest_crime.ram_gb) }} GB</span> of RAM at kill time
+      </div>
+    </div>
+
+    {# Stockholm syndrome #}
+    <div class="rounded border border-zinc-800 bg-zinc-950/60 p-4">
+      <div class="font-mono text-[10px] uppercase tracking-widest text-pink-400 mb-1">🔁 stockholm syndrome</div>
+      {% if stockholm %}
+        {% for s in stockholm %}
+        <div class="font-mono text-sm text-zinc-200 truncate">
+          {{ s.label }} <span class="text-zinc-500 text-xs">· killed {{ s.count }}×, still there</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="font-mono text-xs text-zinc-500">— no repeat offenders yet —</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="mt-4 grid grid-cols-2 gap-3 font-mono text-xs">
+    <div class="rounded border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+      <div class="text-[10px] uppercase tracking-widest text-zinc-500">ram at kill-time</div>
+      <div class="text-zinc-100 text-base">{{ "%.1f"|format(total_ram_gb_at_kill) }} GB</div>
+    </div>
+    <div class="rounded border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+      <div class="text-[10px] uppercase tracking-widest text-zinc-500">cpu% at kill-time (summed)</div>
+      <div class="text-zinc-100 text-base">{{ "%.0f"|format(total_cpu_pct_at_kill) }}%</div>
+    </div>
+  </div>
+
+  <div class="mt-3 font-mono text-[10px] text-zinc-600 text-right">
+    screenshot this · tag #procsentry · roast generated locally — nothing was uploaded
+  </div>
+</section>
+
+{# ---------- Repeat-offender leaderboard ---------- #}
+<section class="mt-5 rounded border border-zinc-800 bg-zinc-900">
+  <div class="px-3 py-2 border-b border-zinc-800 font-mono text-[10px] text-zinc-500 uppercase tracking-widest">
+    // repeat offenders
+  </div>
+  <table class="min-w-full font-mono text-xs">
+    <thead class="text-zinc-500">
+      <tr>
+        <th class="px-3 py-2 text-left">process</th>
+        <th class="px-2 py-2 text-right w-20">kills</th>
+        <th class="px-2 py-2 text-right w-28">ram at kill</th>
+        <th class="px-2 py-2 text-right w-44">last killed</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-zinc-800/60">
+      {% for row in leaderboard %}
+      <tr class="hover:bg-zinc-800/40">
+        <td class="px-3 py-1 text-zinc-200 truncate max-w-[24rem]">{{ row.label }}</td>
+        <td class="px-2 py-1 text-right {% if row.count >= 10 %}text-red-400{% elif row.count >= 5 %}text-amber-300{% else %}text-zinc-300{% endif %}">{{ row.count }}</td>
+        <td class="px-2 py-1 text-right text-zinc-400">{{ "%.2f"|format(row.ram_gb) }} GB</td>
+        <td class="px-2 py-1 text-right text-zinc-500">{{ row.last_killed_at.strftime("%Y-%m-%d %H:%M") }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{# ---------- Project leaderboard ---------- #}
+{% if top_projects %}
+<section class="mt-5 rounded border border-zinc-800 bg-zinc-900">
+  <div class="px-3 py-2 border-b border-zinc-800 font-mono text-[10px] text-zinc-500 uppercase tracking-widest">
+    // kills by project
+  </div>
+  <table class="min-w-full font-mono text-xs">
+    <tbody class="divide-y divide-zinc-800/60">
+      {% for project, count in top_projects %}
+      <tr>
+        <td class="px-3 py-1 text-amber-300 truncate max-w-[24rem]">{{ project }}</td>
+        <td class="px-2 py-1 text-right text-zinc-300 w-20">{{ count }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+{% endif %}
+
+{% endblock %}

@@ -11,7 +11,7 @@ import time
 from app.config import Settings
 from app.collectors.common.capabilities import detect_capabilities
 from app.database.repository import ProcessRepository
-from app.web.routes import alerts, duplicates, ports, processes, system
+from app.web.routes import alerts, duplicates, ports, processes, roast, system
 from app.web.security import install_security
 
 
@@ -29,6 +29,7 @@ def create_app(settings: Settings, repository: ProcessRepository) -> FastAPI:
     app.include_router(duplicates.router)
     app.include_router(ports.router)
     app.include_router(alerts.router)
+    app.include_router(roast.router)
     app.include_router(system.router)
     return app
 

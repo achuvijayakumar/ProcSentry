@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.database.models import (
     AlertRecord,
     DuplicateGroupRecord,
+    KillRecord,
     ProcessNoteRecord,
     ProcessHistoryRecord,
     ProcessRecord,
@@ -355,6 +356,50 @@ class ProcessRepository:
             self.sqlite_vacuum()
             timings["vacuum_ms"] = (time.perf_counter() - started) * 1000
         return timings
+
+
+    def record_kill(
+        self,
+        *,
+        pid: int,
+        name: str,
+        cmdline: str = "",
+        friendly_label: str | None = None,
+        project: str | None = None,
+        user: str | None = None,
+        cpu_percent: float = 0.0,
+        memory_mb: float = 0.0,
+        killed_via: str = "single",
+    ) -> None:
+        """Persist a single kill event for /roast aggregation."""
+
+        with session_scope(self._session_factory) as session:
+            session.add(
+                KillRecord(
+                    pid=pid,
+                    name=name,
+                    cmdline=cmdline,
+                    friendly_label=friendly_label,
+                    project=project,
+                    user=user,
+                    cpu_percent=cpu_percent,
+                    memory_mb=memory_mb,
+                    killed_via=killed_via,
+                )
+            )
+
+    def list_kills(self, since: datetime | None = None, limit: int = 5000) -> list[KillRecord]:
+        """Return kill records, optionally restricted to those after ``since``."""
+
+        with session_scope(self._session_factory) as session:
+            stmt = select(KillRecord)
+            if since is not None:
+                stmt = stmt.where(KillRecord.killed_at >= since)
+            stmt = stmt.order_by(desc(KillRecord.killed_at)).limit(limit)
+            records = list(session.scalars(stmt))
+            for record in records:
+                session.expunge(record)
+            return records
 
 
 def ports_from_record(record: ProcessRecord) -> list[PortInfo]:

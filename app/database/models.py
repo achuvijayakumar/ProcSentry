@@ -107,6 +107,24 @@ class AlertRecord(Base):
     resolved: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class KillRecord(Base):
+    """One row per process kill issued through ProcSentry. Powers /roast."""
+
+    __tablename__ = "kill_records"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    pid: Mapped[int] = mapped_column(Integer)
+    name: Mapped[str] = mapped_column(String(255), index=True)
+    cmdline: Mapped[str] = mapped_column(Text, default="")
+    friendly_label: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    project: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    user: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    cpu_percent: Mapped[float] = mapped_column(Float, default=0)
+    memory_mb: Mapped[float] = mapped_column(Float, default=0)
+    killed_via: Mapped[str] = mapped_column(String(32), default="single")
+    killed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
 class ProcessNoteRecord(Base):
     """Operator note/tag attached to a process fingerprint or PID."""
 

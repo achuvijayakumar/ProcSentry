@@ -568,14 +568,37 @@ def api_process_tree(request: Request) -> list[dict[str, object]]:
     return roots
 
 
+def _record_kill_from_record(repository, record, *, killed_via: str) -> None:
+    """Snapshot a process record into the kill log. Swallows DB errors."""
+    try:
+        cmdline = (record.cmdline or "").replace("\0", " ")
+        repository.record_kill(
+            pid=record.pid,
+            name=record.name,
+            cmdline=cmdline,
+            friendly_label=getattr(record, "friendly_label", None),
+            project=getattr(record, "project", None),
+            user=record.user,
+            cpu_percent=record.cpu_percent or 0.0,
+            memory_mb=record.memory_mb or 0.0,
+            killed_via=killed_via,
+        )
+    except Exception:  # pragma: no cover - logging-only failure path
+        pass
+
+
 @router.post("/api/processes/{pid}/kill")
-def kill_process(pid: int) -> dict[str, object]:
+def kill_process(request: Request, pid: int) -> dict[str, object]:
+    repository = request.app.state.repository
+    target = next((p for p in _decorate(repository.list_processes(limit=5000)) if p.pid == pid), None)
     try:
         os.kill(pid, signal.SIGTERM)
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail="Permission denied") from exc
     except ProcessLookupError as exc:
         raise HTTPException(status_code=404, detail="Process not found") from exc
+    if target is not None:
+        _record_kill_from_record(repository, target, killed_via="single")
     return {"ok": True, "pid": pid}
 
 
@@ -587,10 +610,12 @@ def kill_app(request: Request, app_name: str) -> HTMLResponse:
     if not targets:
         return HTMLResponse('<span class="font-mono text-xs text-zinc-500">— no processes —</span>')
     killed, failed = 0, 0
+    repository = request.app.state.repository
     for p in targets:
         try:
             os.kill(p.pid, signal.SIGTERM)
             killed += 1
+            _record_kill_from_record(repository, p, killed_via="app")
         except (PermissionError, ProcessLookupError):
             failed += 1
     msg = f'<span class="font-mono text-xs text-green-400">SIGTERM → {killed} pid(s)</span>'
