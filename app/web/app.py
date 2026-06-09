@@ -13,6 +13,7 @@ from app.collectors.common.capabilities import detect_capabilities
 from app.database.repository import ProcessRepository
 from app.web.routes import alerts, duplicates, ports, processes, roast, system
 from app.web.security import install_security
+from app.web.url_prefix import prefixed_url
 
 
 def create_app(settings: Settings, repository: ProcessRepository) -> FastAPI:
@@ -23,6 +24,7 @@ def create_app(settings: Settings, repository: ProcessRepository) -> FastAPI:
     app.state.repository = repository
     app.state.capabilities = detect_capabilities()
     app.mount("/static", StaticFiles(directory="app/web/static"), name="static")
+    _register_url_helper()
     _install_rate_limit(app)
     install_security(app, settings)
     app.include_router(processes.router)
@@ -32,6 +34,22 @@ def create_app(settings: Settings, repository: ProcessRepository) -> FastAPI:
     app.include_router(roast.router)
     app.include_router(system.router)
     return app
+
+
+def _register_url_helper() -> None:
+    """Expose ``url(request, path)`` to every Jinja environment in use.
+
+    Each route module owns its own ``Jinja2Templates`` instance, so register
+    the prefix-aware helper on all of them from one place.
+    """
+
+    from app.web import security
+    from app.web.routes import alerts, duplicates, ports, processes, roast, system
+
+    modules = (security, alerts, duplicates, ports, processes, roast, system)
+    for module in modules:
+        env = module.templates.env
+        env.globals["url"] = prefixed_url
 
 
 def _install_rate_limit(app: FastAPI) -> None:

@@ -34,7 +34,7 @@ def install_security(app: FastAPI, settings: Settings) -> None:
             if not _valid_session(request, settings):
                 if request.url.path.startswith("/api/") or request.headers.get("hx-request"):
                     return Response("authentication required", status_code=401)
-                return RedirectResponse("/login", status_code=303)
+                return RedirectResponse(_prefixed(request, "/login"), status_code=303)
         if settings.web.csrf_enabled and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
             if request.url.path not in {"/login", "/logout"} and not _valid_csrf(request):
                 return Response("csrf token invalid", status_code=403)
@@ -63,7 +63,7 @@ def install_security(app: FastAPI, settings: Settings) -> None:
                 request, "login.html", {"error": "Invalid credentials"}, status_code=401
             )
         token = _sign_session(username, settings)
-        response = RedirectResponse("/", status_code=303)
+        response = RedirectResponse(_prefixed(request, "/"), status_code=303)
         response.set_cookie(
             SESSION_COOKIE,
             token,
@@ -74,10 +74,16 @@ def install_security(app: FastAPI, settings: Settings) -> None:
         return response
 
     @app.post("/logout")
-    def logout() -> Response:
-        response = RedirectResponse("/login", status_code=303)
+    def logout(request: Request) -> Response:
+        response = RedirectResponse(_prefixed(request, "/login"), status_code=303)
         response.delete_cookie(SESSION_COOKIE)
         return response
+
+
+def _prefixed(request: Request, path: str) -> str:
+    """Prefix an app-absolute path with the reverse-proxy prefix, if any."""
+    prefix = request.headers.get("x-forwarded-prefix", "").rstrip("/")
+    return f"{prefix}{path}" if prefix else path
 
 
 def _is_public(path: str) -> bool:

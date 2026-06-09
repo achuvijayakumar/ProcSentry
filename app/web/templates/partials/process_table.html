@@ -19,7 +19,7 @@
       {% for proc in processes %}
       {% set row_border = "border-l-2 border-red-500" if proc.suspicious_score > 0 else ("border-l-2 border-amber-500" if proc.duplicate_score > 0 else "border-l-transparent border-l-2") %}
       <tr class="cursor-pointer hover:bg-zinc-900 {{ row_border }}" onclick="location.href='/processes/{{ proc.pid }}'">
-        <td class="px-2 py-1 font-mono text-cyan-400"><a href="/processes/{{ proc.pid }}" onclick="event.stopPropagation()">{{ proc.pid }}</a></td>
+        <td class="px-2 py-1 font-mono text-cyan-400"><a href="{{ url(request, '/processes/' ~ (proc.pid)) }}" onclick="event.stopPropagation()">{{ proc.pid }}</a></td>
         <td class="px-2 py-1 font-mono whitespace-nowrap hidden sm:table-cell">
           {% if proc.project %}
           <span class="text-amber-300">{{ proc.project }}</span>
@@ -50,7 +50,7 @@
           <span id="kill-result-{{ proc.pid }}"></span>
           <button
             class="font-mono text-xs text-red-500 border border-red-800 hover:border-red-500 px-1.5 py-0.5 rounded transition-colors"
-            hx-post="/api/processes/{{ proc.pid }}/kill"
+            hx-post="{{ url(request, '/api/processes/' ~ (proc.pid) ~ '/kill') }}"
             hx-confirm="Kill {{ proc.project + ' · ' if proc.project else '' }}{{ proc.friendly_label or proc.name }} (PID {{ proc.pid }})?"
             hx-on::after-request="document.getElementById('kill-result-{{ proc.pid }}').textContent='✓ sent'; this.disabled=true; this.classList.add('opacity-40')">
             [×]

@@ -8,10 +8,10 @@
   </div>
   <div class="font-mono text-xs text-zinc-500 text-right">
     window:
-    <a href="/roast?days=7"  class="{% if days == 7  %}text-pink-400{% else %}text-cyan-500{% endif %} hover:underline">7d</a> ·
-    <a href="/roast?days=30" class="{% if days == 30 %}text-pink-400{% else %}text-cyan-500{% endif %} hover:underline">30d</a> ·
-    <a href="/roast?days=90" class="{% if days == 90 %}text-pink-400{% else %}text-cyan-500{% endif %} hover:underline">90d</a> ·
-    <a href="/roast?days=365" class="{% if days == 365 %}text-pink-400{% else %}text-cyan-500{% endif %} hover:underline">1y</a>
+    <a href="{{ url(request, '/roast?days=7') }}"  class="{% if days == 7  %}text-pink-400{% else %}text-cyan-500{% endif %} hover:underline">7d</a> ·
+    <a href="{{ url(request, '/roast?days=30') }}" class="{% if days == 30 %}text-pink-400{% else %}text-cyan-500{% endif %} hover:underline">30d</a> ·
+    <a href="{{ url(request, '/roast?days=90') }}" class="{% if days == 90 %}text-pink-400{% else %}text-cyan-500{% endif %} hover:underline">90d</a> ·
+    <a href="{{ url(request, '/roast?days=365') }}" class="{% if days == 365 %}text-pink-400{% else %}text-cyan-500{% endif %} hover:underline">1y</a>
   </div>
 </div>
 

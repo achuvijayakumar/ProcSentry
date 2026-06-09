@@ -1,7 +1,7 @@
 {% for p in processes %}
 <tr class="hover:bg-zinc-800/50 cursor-pointer {% if p.suspicious_score > 0 %}border-l-2 border-red-500{% elif p.duplicate_score > 0 %}border-l-2 border-amber-500{% endif %}" onclick="location.href='/processes/{{ p.pid }}'">
   <td class="px-2 py-1 text-zinc-600 w-8">{{ loop.index }}</td>
-  <td class="px-2 py-1 text-cyan-400 w-16"><a href="/processes/{{ p.pid }}" onclick="event.stopPropagation()">{{ p.pid }}</a></td>
+  <td class="px-2 py-1 text-cyan-400 w-16"><a href="{{ url(request, '/processes/' ~ (p.pid)) }}" onclick="event.stopPropagation()">{{ p.pid }}</a></td>
   <td class="px-2 py-1 whitespace-nowrap hidden sm:table-cell">
     {% if p.project %}<span class="text-amber-300">{{ p.project }}</span>{% else %}<span class="text-zinc-700">—</span>{% endif %}
   </td>
@@ -23,7 +23,7 @@
     <span id="kill-result-top-{{ p.pid }}"></span>
     <button
       class="text-red-500 border border-red-800 hover:border-red-500 px-1.5 py-0.5 rounded transition-colors"
-      hx-post="/api/processes/{{ p.pid }}/kill"
+      hx-post="{{ url(request, '/api/processes/' ~ (p.pid) ~ '/kill') }}"
       hx-confirm="Kill PID {{ p.pid }} ({{ p.name }})?"
       hx-on::after-request="document.getElementById('kill-result-top-{{ p.pid }}').textContent='✓'; this.disabled=true; this.classList.add('opacity-40')">
       [×]

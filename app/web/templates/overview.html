@@ -23,13 +23,13 @@
   <div class="rounded border border-zinc-800 bg-zinc-900">
     <div class="px-3 py-2 border-b border-zinc-800 font-mono text-[10px] text-zinc-500 uppercase tracking-widest flex items-center justify-between">
       <span><span class="ps-tip" data-tip="Top 5 processes by CPU usage right now. Click any row to see details.">// top cpu</span></span>
-      <a href="/top?sort=cpu" class="text-cyan-500 hover:underline">more →</a>
+      <a href="{{ url(request, '/top?sort=cpu') }}" class="text-cyan-500 hover:underline">more →</a>
     </div>
     <table class="min-w-full font-mono text-xs">
       <tbody class="divide-y divide-zinc-800/60">
         {% for p in top_cpu %}
         <tr class="hover:bg-zinc-800/50 cursor-pointer" onclick="location.href='/processes/{{ p.pid }}'">
-          <td class="px-3 py-1 text-cyan-400 w-16"><a href="/processes/{{ p.pid }}" onclick="event.stopPropagation()">{{ p.pid }}</a></td>
+          <td class="px-3 py-1 text-cyan-400 w-16"><a href="{{ url(request, '/processes/' ~ (p.pid)) }}" onclick="event.stopPropagation()">{{ p.pid }}</a></td>
           <td class="px-2 py-1 text-zinc-200 truncate max-w-[14rem]">
             {% if p.project %}<span class="text-amber-300">{{ p.project }}</span>·{% endif %}<span class="text-zinc-300">{{ p.friendly_label or p.name }}</span>
           </td>
@@ -46,13 +46,13 @@
   <div class="rounded border border-zinc-800 bg-zinc-900">
     <div class="px-3 py-2 border-b border-zinc-800 font-mono text-[10px] text-zinc-500 uppercase tracking-widest flex items-center justify-between">
       <span><span class="ps-tip" data-tip="Top 5 processes by resident memory (RSS).">// top ram</span></span>
-      <a href="/top?sort=ram" class="text-cyan-500 hover:underline">more →</a>
+      <a href="{{ url(request, '/top?sort=ram') }}" class="text-cyan-500 hover:underline">more →</a>
     </div>
     <table class="min-w-full font-mono text-xs">
       <tbody class="divide-y divide-zinc-800/60">
         {% for p in top_ram %}
         <tr class="hover:bg-zinc-800/50 cursor-pointer" onclick="location.href='/processes/{{ p.pid }}'">
-          <td class="px-3 py-1 text-cyan-400 w-16"><a href="/processes/{{ p.pid }}" onclick="event.stopPropagation()">{{ p.pid }}</a></td>
+          <td class="px-3 py-1 text-cyan-400 w-16"><a href="{{ url(request, '/processes/' ~ (p.pid)) }}" onclick="event.stopPropagation()">{{ p.pid }}</a></td>
           <td class="px-2 py-1 text-zinc-200 truncate max-w-[14rem]">
             {% if p.project %}<span class="text-amber-300">{{ p.project }}</span>·{% endif %}<span class="text-zinc-300">{{ p.friendly_label or p.name }}</span>
           </td>
@@ -69,13 +69,13 @@
   <div class="rounded border border-zinc-800 bg-zinc-900">
     <div class="px-3 py-2 border-b border-zinc-800 font-mono text-[10px] text-zinc-500 uppercase tracking-widest flex items-center justify-between">
       <span><span class="ps-tip" data-tip="Top 5 processes by outbound TCP/UDP connection count. Useful for spotting chatty services or runaway clients.">// top outbound</span></span>
-      <a href="/top?sort=out" class="text-cyan-500 hover:underline">more →</a>
+      <a href="{{ url(request, '/top?sort=out') }}" class="text-cyan-500 hover:underline">more →</a>
     </div>
     <table class="min-w-full font-mono text-xs">
       <tbody class="divide-y divide-zinc-800/60">
         {% for p in top_out %}
         <tr class="hover:bg-zinc-800/50 cursor-pointer" onclick="location.href='/processes/{{ p.pid }}'">
-          <td class="px-3 py-1 text-cyan-400 w-16"><a href="/processes/{{ p.pid }}" onclick="event.stopPropagation()">{{ p.pid }}</a></td>
+          <td class="px-3 py-1 text-cyan-400 w-16"><a href="{{ url(request, '/processes/' ~ (p.pid)) }}" onclick="event.stopPropagation()">{{ p.pid }}</a></td>
           <td class="px-2 py-1 text-zinc-200 truncate max-w-[14rem]">
             {% if p.project %}<span class="text-amber-300">{{ p.project }}</span>·{% endif %}<span class="text-zinc-300">{{ p.friendly_label or p.name }}</span>
           </td>
@@ -111,7 +111,7 @@
       <span class="font-mono text-xs text-zinc-500 hidden sm:inline">{{ "%.1f"|format(group.total_cpu) }}% cpu</span>
       <span class="font-mono text-xs text-zinc-500 hidden sm:inline">{{ "%.0f"|format(group.total_mem_mb) }}M ram</span>
       {% if group.duplicate_count > 0 %}
-      <a href="/duplicates" class="font-mono text-xs text-amber-400 hover:underline">⚠ {{ group.duplicate_count }} dup</a>
+      <a href="{{ url(request, '/duplicates') }}" class="font-mono text-xs text-amber-400 hover:underline">⚠ {{ group.duplicate_count }} dup</a>
       {% endif %}
     </div>
     {% if group.name != "unknown" %}
@@ -119,7 +119,7 @@
       <span id="app-result-{{ loop.index }}"></span>
       <button
         class="font-mono text-xs border border-red-700 text-red-400 hover:bg-red-950 px-2 py-1 rounded transition-colors whitespace-nowrap"
-        hx-post="/api/apps/{{ group.name }}/kill"
+        hx-post="{{ url(request, '/api/apps/' ~ (group.name) ~ '/kill') }}"
         hx-confirm="Kill ALL {{ group.procs|length }} process(es) in {{ group.name }}?"
         hx-target="#app-result-{{ loop.index }}"
         hx-swap="innerHTML"
@@ -148,14 +148,14 @@
       {% for p in group.procs %}
       {% set border = "border-l-2 border-red-500" if p.suspicious_score > 0 else ("border-l-2 border-amber-500" if p.is_duplicate else "") %}
       <tr class="hover:bg-zinc-800/50 cursor-pointer {{ border }}" onclick="location.href='/processes/{{ p.pid }}'">
-        <td class="px-3 py-1 text-cyan-400 w-16"><a href="/processes/{{ p.pid }}" onclick="event.stopPropagation()">{{ p.pid }}</a></td>
+        <td class="px-3 py-1 text-cyan-400 w-16"><a href="{{ url(request, '/processes/' ~ (p.pid)) }}" onclick="event.stopPropagation()">{{ p.pid }}</a></td>
         <td class="px-2 py-1 text-zinc-200">
           <div class="flex items-center gap-1.5 flex-wrap">
             <span class="truncate max-w-[10rem] sm:max-w-xs">{{ p.friendly_label or p.name }}</span>
             {% if p.is_zombie %}<span class="ps-tip ps-tip-badge text-zinc-400 text-[10px] border border-zinc-700 px-1 rounded" data-tip="Zombie: the process already exited but its parent hasn't called wait() to reap it. Harmless but takes a PID slot. Kill the parent to clear it.">ZOMBIE</span>{% endif %}
             {% if p.is_orphan %}<span class="ps-tip ps-tip-badge text-zinc-400 text-[10px] border border-zinc-700 px-1 rounded" data-tip="Orphan: original parent died, so init (PID 1) adopted it. Still runs normally — often a stray background process you can kill.">ORPHAN</span>{% endif %}
             {% if p.executable_deleted %}<span class="ps-tip ps-tip-badge text-red-400 text-[10px] border border-red-800 px-1 rounded" data-tip="The binary on disk has been deleted while the process is still running. Either a routine package upgrade — restart the service — or a security red flag (malware hiding its tracks).">DEL</span>{% endif %}
-            {% if p.is_duplicate %}<a href="/duplicates" onclick="event.stopPropagation()" class="ps-tip ps-tip-badge text-amber-400 text-[10px] border border-amber-800 px-1 rounded hover:bg-amber-950" data-tip="Another process with the same fingerprint (same exe + cwd + normalized args) is running. Click to open /duplicates and resolve.">DUP</a>{% endif %}
+            {% if p.is_duplicate %}<a href="{{ url(request, '/duplicates') }}" onclick="event.stopPropagation()" class="ps-tip ps-tip-badge text-amber-400 text-[10px] border border-amber-800 px-1 rounded hover:bg-amber-950" data-tip="Another process with the same fingerprint (same exe + cwd + normalized args) is running. Click to open /duplicates and resolve.">DUP</a>{% endif %}
           </div>
         </td>
         <td class="px-2 py-1 text-zinc-500 w-24 truncate hidden md:table-cell">{{ p.user or '—' }}</td>
@@ -168,7 +168,7 @@
           <span id="kill-result-{{ p.pid }}"></span>
           <button
             class="text-red-500 border border-red-800 hover:border-red-500 px-1.5 py-0.5 rounded transition-colors"
-            hx-post="/api/processes/{{ p.pid }}/kill"
+            hx-post="{{ url(request, '/api/processes/' ~ (p.pid) ~ '/kill') }}"
             hx-confirm="Kill PID {{ p.pid }} ({{ p.name }})?"
             hx-on::after-request="document.getElementById('kill-result-{{ p.pid }}').textContent='✓'; this.disabled=true; this.classList.add('opacity-40')">
             [×]

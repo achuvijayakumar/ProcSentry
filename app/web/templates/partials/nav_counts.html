@@ -1,5 +1,5 @@
 <span id="nav-alert-badge"
-  hx-get="/partials/nav-counts"
+  hx-get="{{ url(request, '/partials/nav-counts') }}"
   hx-trigger="every 10s"
   hx-swap="outerHTML">
   {% if alert_count > 0 %}
