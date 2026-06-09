@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="mb-3 flex items-center justify-between gap-3 flex-wrap">
+<div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
   <h1 class="font-mono text-xs text-zinc-500 uppercase tracking-widest">// processes</h1>
-  <form class="flex gap-2 items-center font-mono text-xs" method="get">
-    <input class="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-zinc-200 placeholder-zinc-600 focus:border-cyan-700 focus:outline-none" name="q" value="{{ q }}" placeholder="search command...">
+  <form class="flex flex-wrap gap-2 items-center font-mono text-xs" method="get">
+    <input class="w-full sm:w-auto rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-zinc-200 placeholder-zinc-600 focus:border-cyan-700 focus:outline-none" name="q" value="{{ q }}" placeholder="search command...">
     <label class="flex items-center gap-1 text-zinc-400 cursor-pointer"><input type="checkbox" name="suspicious" value="true" {% if suspicious %}checked{% endif %}> suspicious</label>
     <label class="flex items-center gap-1 text-zinc-400 cursor-pointer"><input type="checkbox" name="duplicates" value="true" {% if duplicates %}checked{% endif %}> duplicates</label>
     <label class="flex items-center gap-1 text-zinc-400 cursor-pointer"><input type="checkbox" name="group_by_app" value="true" {% if group_by_app %}checked{% endif %}> group by app</label>

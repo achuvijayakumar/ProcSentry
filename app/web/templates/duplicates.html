@@ -16,7 +16,7 @@
         </div>
         <div class="mt-1 font-mono text-xs text-zinc-400">{{ group.reason }}</div>
       </div>
-      <div class="flex items-center gap-2 shrink-0">
+      <div class="flex items-center gap-2 shrink-0 flex-wrap">
         <span id="dup-result-{{ group.id }}"></span>
         {% if group.kill_count > 0 %}
         <button
@@ -45,11 +45,11 @@
           <tr>
             <th class="px-2 py-1.5"></th>
             <th class="px-2 py-1.5">PID</th>
-            <th class="px-2 py-1.5">App</th>
+            <th class="px-2 py-1.5 hidden sm:table-cell">App</th>
             <th class="px-2 py-1.5">Command</th>
             <th class="px-2 py-1.5 text-right">CPU</th>
             <th class="px-2 py-1.5 text-right">RAM</th>
-            <th class="px-2 py-1.5">Started</th>
+            <th class="px-2 py-1.5 hidden sm:table-cell">Started</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-zinc-800/60">
@@ -63,16 +63,16 @@
               {% endif %}
             </td>
             <td class="px-2 py-1"><a class="text-cyan-400 hover:underline" href="/processes/{{ m.pid }}">{{ m.pid }}</a></td>
-            <td class="px-2 py-1 whitespace-nowrap">
+            <td class="px-2 py-1 whitespace-nowrap hidden sm:table-cell">
               {% if m.project %}<span class="text-amber-300">{{ m.project }}</span>{% else %}<span class="text-zinc-700">—</span>{% endif %}
             </td>
-            <td class="px-2 py-1 text-zinc-300 max-w-md">
+            <td class="px-2 py-1 text-zinc-300 max-w-[9rem] sm:max-w-xs">
               <div class="truncate">{{ m.friendly_label or m.name }}</div>
-              <div class="text-zinc-600 text-[10px] truncate" title="{{ m.cmdline }}">{{ m.cmdline or '' }}</div>
+              <div class="text-zinc-600 text-[10px] truncate hidden sm:block" title="{{ m.cmdline }}">{{ m.cmdline or '' }}</div>
             </td>
             <td class="px-2 py-1 text-right text-zinc-400">{{ "%.1f"|format(m.cpu_percent) }}%</td>
             <td class="px-2 py-1 text-right text-zinc-400">{{ "%.0f"|format(m.memory_mb) }}M</td>
-            <td class="px-2 py-1 text-zinc-500">{{ m.start_time.strftime('%Y-%m-%d %H:%M') if m.start_time else '—' }}</td>
+            <td class="px-2 py-1 text-zinc-500 hidden sm:table-cell">{{ m.start_time.strftime('%Y-%m-%d %H:%M') if m.start_time else '—' }}</td>
           </tr>
           {% endfor %}
         </tbody>

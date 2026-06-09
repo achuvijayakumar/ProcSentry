@@ -1,5 +1,8 @@
 body { color-scheme: dark; }
 
+/* Guard against accidental horizontal scroll on mobile. */
+html, body { overflow-x: hidden; }
+
 /* ---------- Tooltips ----------
    Usage:
      <span class="ps-tip" data-tip="Outbound TCP connections count">Out</span>
@@ -63,4 +66,16 @@ body { color-scheme: dark; }
 /* When the tooltip target is a small badge, drop the dotted underline. */
 .ps-tip-badge {
   text-decoration: none;
+}
+
+/* Mobile: hover tooltips are unusable on touch and cause overflow.
+   Cap their width and disable the hover popup on coarse pointers. */
+@media (max-width: 640px) {
+  .ps-tip::after {
+    max-width: min(70vw, 240px);
+  }
+}
+@media (hover: none) and (pointer: coarse) {
+  .ps-tip::after { display: none; }
+  .ps-tip { text-decoration: none; cursor: default; }
 }

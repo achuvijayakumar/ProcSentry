@@ -3,14 +3,14 @@
     <thead class="bg-zinc-900 text-xs uppercase text-zinc-500 tracking-wider">
       <tr>
         <th class="px-2 py-1.5"><span class="ps-tip" data-tip="Process ID — the kernel's unique handle for this process." data-tip-pos="bottom">PID</span></th>
-        <th class="px-2 py-1.5"><span class="ps-tip" data-tip="Detected app or service this process belongs to (from /home/*/apps/, /opt/, /srv/, systemd unit, or well-known service name)." data-tip-pos="bottom">App</span></th>
+        <th class="px-2 py-1.5 hidden sm:table-cell"><span class="ps-tip" data-tip="Detected app or service this process belongs to (from /home/*/apps/, /opt/, /srv/, systemd unit, or well-known service name)." data-tip-pos="bottom">App</span></th>
         <th class="px-2 py-1.5">Command</th>
         <th class="px-2 py-1.5 text-right"><span class="ps-tip" data-tip="CPU usage as a percentage of one core. 100% = one core saturated." data-tip-pos="bottom">CPU</span></th>
         <th class="px-2 py-1.5 text-right"><span class="ps-tip" data-tip="Resident memory in megabytes (RSS)." data-tip-pos="bottom">RAM</span></th>
-        <th class="px-2 py-1.5 text-right"><span class="ps-tip" data-tip="Outbound TCP/UDP connections this process has open." data-tip-pos="bottom">Out</span></th>
-        <th class="px-2 py-1.5 text-right"><span class="ps-tip" data-tip="How many times this process has restarted recently. >0 = crash loop suspect." data-tip-pos="bottom">Rst</span></th>
-        <th class="px-2 py-1.5 text-right"><span class="ps-tip" data-tip="Duplicate confidence 0–99. Higher = more sure another process is doing the same thing." data-tip-pos="bottom">Dup</span></th>
-        <th class="px-2 py-1.5 text-right"><span class="ps-tip" data-tip="Suspicion score 0–100. Built from signals like deleted executable, weird name, suspicious cmdline." data-tip-pos="bottom">Susp</span></th>
+        <th class="px-2 py-1.5 text-right hidden sm:table-cell"><span class="ps-tip" data-tip="Outbound TCP/UDP connections this process has open." data-tip-pos="bottom">Out</span></th>
+        <th class="px-2 py-1.5 text-right hidden sm:table-cell"><span class="ps-tip" data-tip="How many times this process has restarted recently. >0 = crash loop suspect." data-tip-pos="bottom">Rst</span></th>
+        <th class="px-2 py-1.5 text-right hidden md:table-cell"><span class="ps-tip" data-tip="Duplicate confidence 0–99. Higher = more sure another process is doing the same thing." data-tip-pos="bottom">Dup</span></th>
+        <th class="px-2 py-1.5 text-right hidden md:table-cell"><span class="ps-tip" data-tip="Suspicion score 0–100. Built from signals like deleted executable, weird name, suspicious cmdline." data-tip-pos="bottom">Susp</span></th>
         <th class="px-2 py-1.5"><span class="ps-tip" data-tip="OK = healthy · WARN = some suspicion · CRIT = high suspicion · ZOMBIE/ORPHAN = anomalous state." data-tip-pos="bottom">Status</span></th>
         <th class="px-2 py-1.5"></th>
       </tr>
@@ -20,25 +20,25 @@
       {% set row_border = "border-l-2 border-red-500" if proc.suspicious_score > 0 else ("border-l-2 border-amber-500" if proc.duplicate_score > 0 else "border-l-transparent border-l-2") %}
       <tr class="cursor-pointer hover:bg-zinc-900 {{ row_border }}" onclick="location.href='/processes/{{ proc.pid }}'">
         <td class="px-2 py-1 font-mono text-cyan-400"><a href="/processes/{{ proc.pid }}" onclick="event.stopPropagation()">{{ proc.pid }}</a></td>
-        <td class="px-2 py-1 font-mono whitespace-nowrap">
+        <td class="px-2 py-1 font-mono whitespace-nowrap hidden sm:table-cell">
           {% if proc.project %}
           <span class="text-amber-300">{{ proc.project }}</span>
           {% else %}
           <span class="text-zinc-700">—</span>
           {% endif %}
         </td>
-        <td class="px-2 py-1 max-w-md font-mono">
+        <td class="px-2 py-1 max-w-[9rem] sm:max-w-xs font-mono">
           <div class="text-zinc-100 truncate">{{ proc.friendly_label or proc.name }}</div>
           {% if proc.cmdline %}
-          <div class="text-zinc-600 text-[10px] truncate" title="{{ proc.cmdline.replace('\0', ' ') }}">{{ proc.cmdline.replace('\0', ' ') }}</div>
+          <div class="text-zinc-600 text-[10px] truncate hidden sm:block" title="{{ proc.cmdline.replace('\0', ' ') }}">{{ proc.cmdline.replace('\0', ' ') }}</div>
           {% endif %}
         </td>
         <td class="px-2 py-1 text-right font-mono {% if proc.cpu_percent > 50 %}text-red-400{% elif proc.cpu_percent > 10 %}text-amber-400{% else %}text-zinc-400{% endif %}">{{ "%.1f"|format(proc.cpu_percent) }}%</td>
         <td class="px-2 py-1 text-right font-mono text-zinc-400">{{ "%.0f"|format(proc.memory_mb) }}M</td>
-        <td class="px-2 py-1 text-right font-mono {% if proc.outbound_connections > 50 %}text-red-400{% elif proc.outbound_connections > 15 %}text-amber-400{% else %}text-zinc-500{% endif %}">{{ proc.outbound_connections }}</td>
-        <td class="px-2 py-1 text-right font-mono {% if proc.restart_count > 5 %}text-red-400{% elif proc.restart_count > 0 %}text-amber-400{% else %}text-zinc-500{% endif %}">{{ proc.restart_count }}</td>
-        <td class="px-2 py-1 text-right font-mono {% if proc.duplicate_score > 50 %}text-red-400{% elif proc.duplicate_score > 0 %}text-amber-400{% else %}text-zinc-600{% endif %}">{{ proc.duplicate_score }}</td>
-        <td class="px-2 py-1 text-right font-mono {% if proc.suspicious_score > 50 %}text-red-400{% elif proc.suspicious_score > 0 %}text-amber-400{% else %}text-zinc-600{% endif %}">{{ proc.suspicious_score }}</td>
+        <td class="px-2 py-1 text-right font-mono hidden sm:table-cell {% if proc.outbound_connections > 50 %}text-red-400{% elif proc.outbound_connections > 15 %}text-amber-400{% else %}text-zinc-500{% endif %}">{{ proc.outbound_connections }}</td>
+        <td class="px-2 py-1 text-right font-mono hidden sm:table-cell {% if proc.restart_count > 5 %}text-red-400{% elif proc.restart_count > 0 %}text-amber-400{% else %}text-zinc-500{% endif %}">{{ proc.restart_count }}</td>
+        <td class="px-2 py-1 text-right font-mono hidden md:table-cell {% if proc.duplicate_score > 50 %}text-red-400{% elif proc.duplicate_score > 0 %}text-amber-400{% else %}text-zinc-600{% endif %}">{{ proc.duplicate_score }}</td>
+        <td class="px-2 py-1 text-right font-mono hidden md:table-cell {% if proc.suspicious_score > 50 %}text-red-400{% elif proc.suspicious_score > 0 %}text-amber-400{% else %}text-zinc-600{% endif %}">{{ proc.suspicious_score }}</td>
         <td class="px-2 py-1 text-zinc-500">
           {% if proc.is_zombie %}<span class="ps-tip ps-tip-badge text-zinc-400 font-mono" data-tip="Zombie: process exited but parent hasn't reaped it.">ZOMBIE</span>
           {% elif proc.is_orphan %}<span class="ps-tip ps-tip-badge text-zinc-400 font-mono" data-tip="Orphan: parent died; adopted by init.">ORPHAN</span>

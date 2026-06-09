@@ -42,34 +42,87 @@
     {%- endmacro -%}
     <nav class="border-b border-zinc-800 bg-zinc-900">
       <div class="mx-auto flex max-w-7xl items-center gap-1 px-4 py-2 text-xs font-mono">
-        <a class="font-bold text-green-400 tracking-tight mr-4" href="/">ProcSentry</a>
-        {{ nav_link("/",            "home",        idle="text-zinc-300", exact=True) }}
-        {{ nav_link("/top",         "top") }}
-        {{ nav_link("/processes",   "processes") }}
-        {{ nav_link("/suggestions", "suggestions") }}
-        {{ nav_link("/duplicates",  "duplicates") }}
-        {{ nav_link("/suspicious",  "suspicious") }}
-        {{ nav_link("/ports",       "ports") }}
-        {%- set alerts_active = _path == "/alerts" or _path.startswith("/alerts/") -%}
-        <a aria-current="{{ 'page' if alerts_active else 'false' }}"
-           class="relative px-2 py-1 rounded transition-colors flex items-center gap-1.5
-                  {% if alerts_active %}text-zinc-50 bg-zinc-800/70 font-semibold
-                                       after:absolute after:left-2 after:right-2 after:-bottom-[9px]
-                                       after:h-[2px] after:rounded-full after:bg-amber-400
-                  {% else %}text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800{% endif %}"
-           href="/alerts">
-          alerts
-          <span id="nav-alert-badge"
-            hx-get="/partials/nav-counts"
-            hx-trigger="load, every 10s"
-            hx-swap="outerHTML"></span>
-        </a>
-        {{ nav_link("/roast", "roast", idle="text-pink-400", active_text="text-pink-200", accent="bg-pink-400") }}
-        {{ nav_link("/capabilities/view", "caps", idle="text-zinc-500", extra_class="ml-auto") }}
-        <span class="text-zinc-600 border border-zinc-800 px-2 py-0.5 rounded ml-2">{{ request.app.state.capabilities.system }}</span>
+        <a class="font-bold text-green-400 tracking-tight mr-2 shrink-0" href="/">ProcSentry</a>
+
+        {# Desktop nav #}
+        <div class="hidden md:flex items-center gap-1 flex-1 min-w-0">
+          {{ nav_link("/",            "home",        idle="text-zinc-300", exact=True) }}
+          {{ nav_link("/top",         "top") }}
+          {{ nav_link("/processes",   "processes") }}
+          {{ nav_link("/suggestions", "suggestions") }}
+          {{ nav_link("/duplicates",  "duplicates") }}
+          {{ nav_link("/suspicious",  "suspicious") }}
+          {{ nav_link("/ports",       "ports") }}
+          {%- set alerts_active = _path == "/alerts" or _path.startswith("/alerts/") -%}
+          <a aria-current="{{ 'page' if alerts_active else 'false' }}"
+             class="relative px-2 py-1 rounded transition-colors flex items-center gap-1.5
+                    {% if alerts_active %}text-zinc-50 bg-zinc-800/70 font-semibold
+                                         after:absolute after:left-2 after:right-2 after:-bottom-[9px]
+                                         after:h-[2px] after:rounded-full after:bg-amber-400
+                    {% else %}text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800{% endif %}"
+             href="/alerts">
+            alerts
+            <span id="nav-alert-badge"
+              hx-get="/partials/nav-counts"
+              hx-trigger="load, every 10s"
+              hx-swap="outerHTML"></span>
+          </a>
+          {{ nav_link("/roast", "roast", idle="text-pink-400", active_text="text-pink-200", accent="bg-pink-400") }}
+          {{ nav_link("/capabilities/view", "caps", idle="text-zinc-500", extra_class="ml-auto") }}
+          <span class="text-zinc-600 border border-zinc-800 px-2 py-0.5 rounded ml-2 shrink-0">{{ request.app.state.capabilities.system }}</span>
+        </div>
+
+        {# Mobile: alert badge + hamburger #}
+        <div class="flex md:hidden items-center gap-2 ml-auto">
+          <a href="/alerts" class="flex items-center gap-1 text-zinc-400 px-2 py-1 rounded hover:bg-zinc-800">
+            alerts
+            <span id="nav-alert-badge-mobile"
+              hx-get="/partials/nav-counts"
+              hx-trigger="load, every 10s"
+              hx-swap="outerHTML"></span>
+          </a>
+          <button id="nav-toggle" aria-label="Toggle menu" class="p-1.5 rounded text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors">
+            <svg id="nav-icon-open" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            <svg id="nav-icon-close" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+
+      {# Mobile dropdown menu #}
+      <div id="nav-mobile-menu" class="hidden md:hidden border-t border-zinc-800 bg-zinc-900 px-4 py-3 grid grid-cols-3 gap-2 font-mono text-xs">
+        {{ nav_link("/",            "home",        idle="text-zinc-300", exact=True, extra_class="text-center") }}
+        {{ nav_link("/top",         "top",         extra_class="text-center") }}
+        {{ nav_link("/processes",   "processes",   extra_class="text-center") }}
+        {{ nav_link("/suggestions", "suggestions", extra_class="text-center") }}
+        {{ nav_link("/duplicates",  "duplicates",  extra_class="text-center") }}
+        {{ nav_link("/suspicious",  "suspicious",  extra_class="text-center") }}
+        {{ nav_link("/ports",       "ports",       extra_class="text-center") }}
+        {{ nav_link("/roast",       "roast",       idle="text-pink-400", active_text="text-pink-200", accent="bg-pink-400", extra_class="text-center") }}
+        {{ nav_link("/capabilities/view", "caps",  idle="text-zinc-500", extra_class="text-center") }}
       </div>
     </nav>
-    <main class="mx-auto max-w-7xl px-4 py-5">
+
+    <script>
+      (function() {
+        const toggle = document.getElementById('nav-toggle');
+        const menu   = document.getElementById('nav-mobile-menu');
+        const iconO  = document.getElementById('nav-icon-open');
+        const iconC  = document.getElementById('nav-icon-close');
+        function setOpen(open) {
+          menu.classList.toggle('hidden', !open);
+          iconO.classList.toggle('hidden', open);
+          iconC.classList.toggle('hidden', !open);
+        }
+        toggle.addEventListener('click', function() {
+          setOpen(menu.classList.contains('hidden'));
+        });
+        menu.addEventListener('click', function(e) {
+          if (e.target.closest('a')) setOpen(false);
+        });
+      })();
+    </script>
+
+    <main class="mx-auto max-w-7xl px-3 py-4 md:px-4 md:py-5">
       {% block content %}{% endblock %}
     </main>
   </body>
