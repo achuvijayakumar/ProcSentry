@@ -42,6 +42,7 @@ ProcSentry is a **Linux-first VPS observability tool** focused on process intell
 | Is this process suspicious? | Lightweight security heuristics |
 | Is this process managed or manual? | systemd / cgroup / container hints |
 | Did this service keep restarting? | Restart-count and restart-loop signals |
+| What have I been killing, and why does it keep coming back? | `/roast` — Wrapped-style kill history with repeat-offender leaderboard |
 
 > **Project status:** deployable alpha. Suitable for real Ubuntu / Debian VPS validation. Keep the dashboard local or protected, and review findings manually before acting.
 
@@ -260,6 +261,7 @@ The dashboard is designed for developers running multiple apps on a single VPS. 
 | `/suspicious` | Suspicious process review |
 | `/ports` | Port exposure with client-side filtering by port / process / public-vs-local |
 | `/alerts` | Alert timeline with inline acknowledge |
+| `/roast` | Wrapped-style kill history: top RAM hog, most-killed, repeat offenders, project leaderboard (`?days=7\|30\|90\|365`) |
 | `/capabilities/view` | Runtime capability overview |
 
 **Killing things from the UI**
@@ -306,6 +308,7 @@ Every cryptic column header and status badge (`OUT`, `RST`, `SUSP`, `DUP`, `ZOMB
 | `/api/ports` | GET | Port map |
 | `/api/alerts` | GET | Active alerts |
 | `/api/alerts/{id}/resolve` | POST | Acknowledge / resolve an alert |
+| `/roast` | GET | Kill history dashboard (`?days=N`, default 30) |
 | `/partials/process-table` | GET | HTMX partial: live process table |
 | `/partials/top-table` | GET | HTMX partial: resource leaderboard rows (`?sort=cpu|ram|out|rst|susp`) |
 | `/partials/nav-counts` | GET | HTMX partial: live alert badge for the nav bar |
@@ -641,13 +644,17 @@ note: intentional blue/green overlap during deploy window
 
 ## Screenshots
 
-| View | Path |
-|---|---|
-| Dashboard overview | `docs/screenshots/dashboard-overview.png` |
-| Duplicate review | `docs/screenshots/duplicate-review.png` |
-| Suspicious process review | `docs/screenshots/suspicious-processes.png` |
-| Process detail | `docs/screenshots/process-detail.png` |
-| Terminal UI | `docs/screenshots/terminal-ui.png` |
+### Dashboard — app-grouped home view
+![Dashboard](docs/screenshots/Screenshot%202026-06-09%20235109.png)
+
+### Duplicates — confidence-scored duplicate groups with keep/kill labels
+![Duplicates](docs/screenshots/Screenshot%202026-06-09%20235132.png)
+
+### Alerts — live alert timeline with inline acknowledge
+![Alerts](docs/screenshots/Screenshot%202026-06-09%20235146.png)
+
+### Roast — Wrapped-style 30-day kill history
+![Roast](docs/screenshots/Screenshot%202026-06-09%20235156.png)
 
 ---
 
@@ -661,6 +668,7 @@ Recently shipped:
 - [x] Safe-to-close suggestions with explicit protect list and two safety tiers
 - [x] Hover tooltips on every cryptic column and badge
 - [x] DevOps-styled UI: monospace data, color-coded status, dense tables, friendly process labels (`uvicorn (web.app:app)`, `gunicorn (run:app)`, …)
+- [x] `/roast` kill-history dashboard — Wrapped-style shame card tracking every SIGTERM issued through the UI (top hog, most-killed, stockholm-syndrome repeat offenders, project leaderboard)
 
 Near-term focus:
 
