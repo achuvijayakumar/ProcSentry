@@ -94,26 +94,28 @@
   <div class="px-3 py-2 border-b border-zinc-800 font-mono text-[10px] text-zinc-500 uppercase tracking-widest">
     // repeat offenders
   </div>
+  <div class="overflow-x-auto">
   <table class="min-w-full font-mono text-xs">
     <thead class="text-zinc-500">
       <tr>
         <th class="px-3 py-2 text-left">process</th>
-        <th class="px-2 py-2 text-right w-20">kills</th>
-        <th class="px-2 py-2 text-right w-28">ram at kill</th>
-        <th class="px-2 py-2 text-right w-44">last killed</th>
+        <th class="px-2 py-2 text-right w-16">kills</th>
+        <th class="px-2 py-2 text-right w-24 hidden sm:table-cell">ram at kill</th>
+        <th class="px-2 py-2 text-right w-36">last killed</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-zinc-800/60">
       {% for row in leaderboard %}
       <tr class="hover:bg-zinc-800/40">
-        <td class="px-3 py-1 text-zinc-200 truncate max-w-[24rem]">{{ row.label }}</td>
+        <td class="px-3 py-1 text-zinc-200 truncate max-w-[10rem] sm:max-w-[24rem]">{{ row.label }}</td>
         <td class="px-2 py-1 text-right {% if row.count >= 10 %}text-red-400{% elif row.count >= 5 %}text-amber-300{% else %}text-zinc-300{% endif %}">{{ row.count }}</td>
-        <td class="px-2 py-1 text-right text-zinc-400">{{ "%.2f"|format(row.ram_gb) }} GB</td>
-        <td class="px-2 py-1 text-right text-zinc-500">{{ row.last_killed_at.strftime("%Y-%m-%d %H:%M") }}</td>
+        <td class="px-2 py-1 text-right text-zinc-400 hidden sm:table-cell">{{ "%.2f"|format(row.ram_gb) }} GB</td>
+        <td class="px-2 py-1 text-right text-zinc-500 whitespace-nowrap">{{ row.last_killed_at.strftime("%Y-%m-%d %H:%M") }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+  </div>
 </section>
 
 {# ---------- Project leaderboard ---------- #}

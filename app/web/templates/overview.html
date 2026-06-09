@@ -104,21 +104,21 @@
   {% endif %}
 
 <section class="mb-3 rounded border border-zinc-800 bg-zinc-900">
-  <div class="flex items-center justify-between gap-3 px-3 py-2 border-b border-zinc-800">
-    <div class="flex items-baseline gap-3 flex-wrap">
-      <span class="font-mono text-sm {% if group.is_user_app %}text-amber-300{% elif group.name == 'unknown' %}text-zinc-500{% else %}text-cyan-400{% endif %}">// {{ group.name }}</span>
+  <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-zinc-800">
+    <div class="flex items-baseline gap-2 flex-wrap min-w-0">
+      <span class="font-mono text-sm {% if group.is_user_app %}text-amber-300{% elif group.name == 'unknown' %}text-zinc-500{% else %}text-cyan-400{% endif %} truncate max-w-[10rem] sm:max-w-none">// {{ group.name }}</span>
       <span class="font-mono text-xs text-zinc-500">{{ group.procs|length }} proc</span>
-      <span class="font-mono text-xs text-zinc-500">{{ "%.1f"|format(group.total_cpu) }}% cpu</span>
-      <span class="font-mono text-xs text-zinc-500">{{ "%.0f"|format(group.total_mem_mb) }}M ram</span>
+      <span class="font-mono text-xs text-zinc-500 hidden sm:inline">{{ "%.1f"|format(group.total_cpu) }}% cpu</span>
+      <span class="font-mono text-xs text-zinc-500 hidden sm:inline">{{ "%.0f"|format(group.total_mem_mb) }}M ram</span>
       {% if group.duplicate_count > 0 %}
-      <a href="/duplicates" class="font-mono text-xs text-amber-400 hover:underline">⚠ {{ group.duplicate_count }} duplicate(s)</a>
+      <a href="/duplicates" class="font-mono text-xs text-amber-400 hover:underline">⚠ {{ group.duplicate_count }} dup</a>
       {% endif %}
     </div>
     {% if group.name != "unknown" %}
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 shrink-0">
       <span id="app-result-{{ loop.index }}"></span>
       <button
-        class="font-mono text-xs border border-red-700 text-red-400 hover:bg-red-950 px-2 py-1 rounded transition-colors"
+        class="font-mono text-xs border border-red-700 text-red-400 hover:bg-red-950 px-2 py-1 rounded transition-colors whitespace-nowrap"
         hx-post="/api/apps/{{ group.name }}/kill"
         hx-confirm="Kill ALL {{ group.procs|length }} process(es) in {{ group.name }}?"
         hx-target="#app-result-{{ loop.index }}"
@@ -129,41 +129,42 @@
     </div>
     {% endif %}
   </div>
+  <div class="overflow-x-auto">
   <table class="min-w-full font-mono text-xs">
     <thead class="bg-zinc-950/40 text-zinc-600 text-[10px] uppercase tracking-wider">
       <tr>
-        <th class="px-3 py-1 text-left w-20"><span class="ps-tip" data-tip="Process ID — the kernel's unique handle for this process.">PID</span></th>
+        <th class="px-3 py-1 text-left w-16"><span class="ps-tip" data-tip="Process ID — the kernel's unique handle for this process.">PID</span></th>
         <th class="px-2 py-1 text-left">Command</th>
-        <th class="px-2 py-1 text-left w-24"><span class="ps-tip" data-tip="Linux user that owns this process.">User</span></th>
-        <th class="px-2 py-1 text-right w-16"><span class="ps-tip" data-tip="CPU usage as a percentage of one core. 100% = one core saturated.">CPU</span></th>
-        <th class="px-2 py-1 text-right w-16"><span class="ps-tip" data-tip="Resident memory in megabytes (RSS).">RAM</span></th>
-        <th class="px-2 py-1 text-right w-10"><span class="ps-tip" data-tip="Outbound TCP/UDP connections this process has open. Spikes can indicate a runaway client or data exfil.">Out</span></th>
-        <th class="px-2 py-1 text-right w-10"><span class="ps-tip" data-tip="How many times this process has restarted recently. >0 = crash loop suspect.">Rst</span></th>
-        <th class="px-2 py-1 text-right w-10"><span class="ps-tip" data-tip="Suspicion score (0–100) from heuristics: deleted executable, weird name, suspicious cmdline, etc. Hover the badge next to the command for the specific signal.">Susp</span></th>
-        <th class="px-2 py-1 text-right w-12"></th>
+        <th class="px-2 py-1 text-left w-24 hidden md:table-cell"><span class="ps-tip" data-tip="Linux user that owns this process.">User</span></th>
+        <th class="px-2 py-1 text-right w-14"><span class="ps-tip" data-tip="CPU usage as a percentage of one core. 100% = one core saturated.">CPU</span></th>
+        <th class="px-2 py-1 text-right w-14"><span class="ps-tip" data-tip="Resident memory in megabytes (RSS).">RAM</span></th>
+        <th class="px-2 py-1 text-right w-10 hidden sm:table-cell"><span class="ps-tip" data-tip="Outbound TCP/UDP connections this process has open. Spikes can indicate a runaway client or data exfil.">Out</span></th>
+        <th class="px-2 py-1 text-right w-10 hidden sm:table-cell"><span class="ps-tip" data-tip="How many times this process has restarted recently. >0 = crash loop suspect.">Rst</span></th>
+        <th class="px-2 py-1 text-right w-10 hidden sm:table-cell"><span class="ps-tip" data-tip="Suspicion score (0–100) from heuristics: deleted executable, weird name, suspicious cmdline, etc. Hover the badge next to the command for the specific signal.">Susp</span></th>
+        <th class="px-2 py-1 text-right w-10"></th>
       </tr>
     </thead>
     <tbody class="divide-y divide-zinc-800/60">
       {% for p in group.procs %}
       {% set border = "border-l-2 border-red-500" if p.suspicious_score > 0 else ("border-l-2 border-amber-500" if p.is_duplicate else "") %}
       <tr class="hover:bg-zinc-800/50 cursor-pointer {{ border }}" onclick="location.href='/processes/{{ p.pid }}'">
-        <td class="px-3 py-1 text-cyan-400 w-20"><a href="/processes/{{ p.pid }}" onclick="event.stopPropagation()">{{ p.pid }}</a></td>
+        <td class="px-3 py-1 text-cyan-400 w-16"><a href="/processes/{{ p.pid }}" onclick="event.stopPropagation()">{{ p.pid }}</a></td>
         <td class="px-2 py-1 text-zinc-200">
-          <div class="flex items-center gap-2 flex-wrap">
-            <span>{{ p.friendly_label or p.name }}</span>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="truncate max-w-[10rem] sm:max-w-xs">{{ p.friendly_label or p.name }}</span>
             {% if p.is_zombie %}<span class="ps-tip ps-tip-badge text-zinc-400 text-[10px] border border-zinc-700 px-1 rounded" data-tip="Zombie: the process already exited but its parent hasn't called wait() to reap it. Harmless but takes a PID slot. Kill the parent to clear it.">ZOMBIE</span>{% endif %}
             {% if p.is_orphan %}<span class="ps-tip ps-tip-badge text-zinc-400 text-[10px] border border-zinc-700 px-1 rounded" data-tip="Orphan: original parent died, so init (PID 1) adopted it. Still runs normally — often a stray background process you can kill.">ORPHAN</span>{% endif %}
-            {% if p.executable_deleted %}<span class="ps-tip ps-tip-badge text-red-400 text-[10px] border border-red-800 px-1 rounded" data-tip="The binary on disk has been deleted while the process is still running. Either a routine package upgrade — restart the service — or a security red flag (malware hiding its tracks).">DELETED-EXE</span>{% endif %}
+            {% if p.executable_deleted %}<span class="ps-tip ps-tip-badge text-red-400 text-[10px] border border-red-800 px-1 rounded" data-tip="The binary on disk has been deleted while the process is still running. Either a routine package upgrade — restart the service — or a security red flag (malware hiding its tracks).">DEL</span>{% endif %}
             {% if p.is_duplicate %}<a href="/duplicates" onclick="event.stopPropagation()" class="ps-tip ps-tip-badge text-amber-400 text-[10px] border border-amber-800 px-1 rounded hover:bg-amber-950" data-tip="Another process with the same fingerprint (same exe + cwd + normalized args) is running. Click to open /duplicates and resolve.">DUP</a>{% endif %}
           </div>
         </td>
-        <td class="px-2 py-1 text-zinc-500 w-24 truncate">{{ p.user or '—' }}</td>
-        <td class="px-2 py-1 text-right text-zinc-400 w-16">{{ "%.1f"|format(p.cpu_percent) }}%</td>
-        <td class="px-2 py-1 text-right text-zinc-400 w-16">{{ "%.0f"|format(p.memory_mb) }}M</td>
-        <td class="px-2 py-1 text-right w-10 {% if p.outbound_connections > 50 %}text-red-400{% elif p.outbound_connections > 15 %}text-amber-400{% else %}text-zinc-600{% endif %}">{{ p.outbound_connections or '·' }}</td>
-        <td class="px-2 py-1 text-right w-10 {% if p.restart_count > 5 %}text-red-400{% elif p.restart_count > 0 %}text-amber-400{% else %}text-zinc-600{% endif %}">{{ p.restart_count or '·' }}</td>
-        <td class="px-2 py-1 text-right w-10 {% if p.suspicious_score > 50 %}text-red-400{% elif p.suspicious_score > 0 %}text-amber-400{% else %}text-zinc-600{% endif %}">{{ p.suspicious_score or '·' }}</td>
-        <td class="px-2 py-1 text-right w-12" onclick="event.stopPropagation()">
+        <td class="px-2 py-1 text-zinc-500 w-24 truncate hidden md:table-cell">{{ p.user or '—' }}</td>
+        <td class="px-2 py-1 text-right text-zinc-400 w-14">{{ "%.1f"|format(p.cpu_percent) }}%</td>
+        <td class="px-2 py-1 text-right text-zinc-400 w-14">{% if p.memory_mb >= 1024 %}{{ "%.1f"|format(p.memory_mb/1024) }}G{% else %}{{ "%.0f"|format(p.memory_mb) }}M{% endif %}</td>
+        <td class="px-2 py-1 text-right w-10 hidden sm:table-cell {% if p.outbound_connections > 50 %}text-red-400{% elif p.outbound_connections > 15 %}text-amber-400{% else %}text-zinc-600{% endif %}">{{ p.outbound_connections or '·' }}</td>
+        <td class="px-2 py-1 text-right w-10 hidden sm:table-cell {% if p.restart_count > 5 %}text-red-400{% elif p.restart_count > 0 %}text-amber-400{% else %}text-zinc-600{% endif %}">{{ p.restart_count or '·' }}</td>
+        <td class="px-2 py-1 text-right w-10 hidden sm:table-cell {% if p.suspicious_score > 50 %}text-red-400{% elif p.suspicious_score > 0 %}text-amber-400{% else %}text-zinc-600{% endif %}">{{ p.suspicious_score or '·' }}</td>
+        <td class="px-2 py-1 text-right w-10" onclick="event.stopPropagation()">
           <span id="kill-result-{{ p.pid }}"></span>
           <button
             class="text-red-500 border border-red-800 hover:border-red-500 px-1.5 py-0.5 rounded transition-colors"
@@ -177,6 +178,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 </section>
 {% endfor %}
 
