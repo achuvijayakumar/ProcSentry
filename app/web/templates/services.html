@@ -10,6 +10,10 @@
 </div>
 {% endif %}
 
+<input type="search" data-ps-filter="ps-services" oninput="psFilterRows(this)" placeholder="filter units, timers, cron... ( / )"
+       class="mb-3 w-full sm:w-64 rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 placeholder-zinc-600 focus:border-cyan-700 focus:outline-none">
+<div id="ps-services">
+
 <div class="rounded border border-zinc-800 bg-zinc-900 overflow-x-auto mb-4">
   <table class="min-w-full font-mono text-xs">
     <thead class="bg-zinc-950/40 text-zinc-600 text-[10px] uppercase tracking-wider">
@@ -157,4 +161,5 @@
   </table>
 </div>
 {% endif %}
+</div>
 {% endblock %}

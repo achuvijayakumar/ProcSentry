@@ -42,6 +42,36 @@
         if (event.target.tagName === "INPUT") return;
         if (event.key === "g") location.href = ROOT + "/";
         if (event.key === "d") location.href = ROOT + "/duplicates";
+        if (event.key === "/") {
+          const box = document.querySelector("input[data-ps-filter]");
+          if (box) { event.preventDefault(); box.focus(); }
+        }
+      });
+      // Client-side table/list filter. Scope = element whose id is in
+      // data-ps-filter; hides non-matching rows ("tbody tr") and items
+      // ([data-filter-item]); collapses [data-filter-card] blocks left empty.
+      function psFilterRows(input) {
+        const scope = document.getElementById(input.dataset.psFilter);
+        if (!scope) return;
+        const q = input.value.trim().toLowerCase();
+        scope.querySelectorAll("[data-filter-item]").forEach((el) => {
+          el.style.display = !q || el.textContent.toLowerCase().includes(q) ? "" : "none";
+        });
+        scope.querySelectorAll("tbody tr").forEach((tr) => {
+          if (tr.querySelector("td[colspan]")) return; // empty-state rows
+          tr.style.display = !q || tr.textContent.toLowerCase().includes(q) ? "" : "none";
+        });
+        scope.querySelectorAll("[data-filter-card]").forEach((card) => {
+          const rows = Array.from(card.querySelectorAll("tbody tr")).filter((tr) => !tr.querySelector("td[colspan]"));
+          const any = !rows.length || rows.some((tr) => tr.style.display !== "none");
+          card.style.display = any ? "" : "none";
+        });
+      }
+      // Live-refreshing tables (e.g. /top) replace their rows — re-apply filter.
+      document.addEventListener("htmx:afterSwap", () => {
+        document.querySelectorAll("input[data-ps-filter]").forEach((inp) => {
+          if (inp.value) psFilterRows(inp);
+        });
       });
     </script>
   </head>
