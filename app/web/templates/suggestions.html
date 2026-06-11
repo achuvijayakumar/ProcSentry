@@ -5,7 +5,7 @@
   <h1 class="font-mono text-xs text-zinc-500 uppercase tracking-widest">// safe to close</h1>
   <div class="font-mono text-xs text-zinc-500">
     user: <span class="text-cyan-400">{{ current_user or 'unknown' }}</span>
-    {% if duplicate_count > 0 %}· <a href="/duplicates" class="text-amber-400 hover:underline">{{ duplicate_count }} duplicate PIDs (see /duplicates)</a>{% endif %}
+    {% if duplicate_count > 0 %}· <a href="{{ url(request, '/duplicates') }}" class="text-amber-400 hover:underline">{{ duplicate_count }} duplicate PIDs (see /duplicates)</a>{% endif %}
   </div>
 </div>
 
@@ -33,7 +33,7 @@
       <tbody class="divide-y divide-zinc-800/60">
         {% for s in tier1 %}
         <tr class="hover:bg-zinc-800/50">
-          <td class="px-3 py-1 text-cyan-400"><a href="/processes/{{ s.pid }}" class="hover:underline">{{ s.pid }}</a></td>
+          <td class="px-3 py-1 text-cyan-400"><a href="{{ url(request, '/processes/' ~ (s.pid)) }}" class="hover:underline">{{ s.pid }}</a></td>
           <td class="px-2 py-1 text-zinc-200">
             <div>{% if s.project %}<span class="text-amber-300">{{ s.project }}</span> · {% endif %}{{ s.friendly_label }}</div>
             <div class="text-zinc-500 text-[10px] sm:hidden">{{ s.reason }}</div>
@@ -44,7 +44,7 @@
             <span id="kill-result-t1-{{ s.pid }}"></span>
             <button
               class="text-red-500 border border-red-800 hover:border-red-500 px-1.5 py-0.5 rounded transition-colors"
-              hx-post="/api/processes/{{ s.pid }}/kill"
+              hx-post="{{ url(request, '/api/processes/' ~ (s.pid) ~ '/kill') }}"
               hx-confirm="Kill PID {{ s.pid }} ({{ s.name }})? Reason: {{ s.reason }}"
               hx-on::after-request="document.getElementById('kill-result-t1-{{ s.pid }}').textContent='✓'; this.disabled=true; this.classList.add('opacity-40')">
               [×]
@@ -75,7 +75,7 @@
       <tbody class="divide-y divide-zinc-800/60">
         {% for s in tier2 %}
         <tr class="hover:bg-zinc-800/50">
-          <td class="px-3 py-1 text-cyan-400"><a href="/processes/{{ s.pid }}" class="hover:underline">{{ s.pid }}</a></td>
+          <td class="px-3 py-1 text-cyan-400"><a href="{{ url(request, '/processes/' ~ (s.pid)) }}" class="hover:underline">{{ s.pid }}</a></td>
           <td class="px-2 py-1 text-zinc-200">
             <div>{% if s.project %}<span class="text-amber-300">{{ s.project }}</span> · {% endif %}{{ s.friendly_label }}</div>
             <div class="text-zinc-500 text-[10px] sm:hidden">{{ s.reason }}</div>
@@ -86,7 +86,7 @@
             <span id="kill-result-t2-{{ s.pid }}"></span>
             <button
               class="text-red-500 border border-red-800 hover:border-red-500 px-1.5 py-0.5 rounded transition-colors"
-              hx-post="/api/processes/{{ s.pid }}/kill"
+              hx-post="{{ url(request, '/api/processes/' ~ (s.pid) ~ '/kill') }}"
               hx-confirm="⚠ Kill PID {{ s.pid }} ({{ s.name }})?&#10;&#10;Reason: {{ s.reason }}&#10;&#10;You confirmed you reviewed this."
               hx-on::after-request="document.getElementById('kill-result-t2-{{ s.pid }}').textContent='✓'; this.disabled=true; this.classList.add('opacity-40')">
               [×]

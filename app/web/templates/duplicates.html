@@ -21,7 +21,7 @@
         {% if group.kill_count > 0 %}
         <button
           class="font-mono text-xs border border-red-700 text-red-400 hover:bg-red-950 px-2 py-1 rounded transition-colors"
-          hx-post="/api/duplicates/{{ group.id }}/kill-extras"
+          hx-post="{{ url(request, '/api/duplicates/' ~ (group.id) ~ '/kill-extras') }}"
           hx-confirm="Kill {{ group.kill_count }} duplicate(s) and keep PID {{ group.keep_pid }} (oldest)?"
           hx-target="#dup-result-{{ group.id }}"
           hx-swap="innerHTML"
@@ -31,7 +31,7 @@
         {% endif %}
         <button
           class="font-mono text-xs border border-zinc-700 text-zinc-400 hover:border-green-700 hover:text-green-400 px-2 py-1 rounded transition-colors"
-          hx-post="/api/duplicates/{{ group.id }}/resolve"
+          hx-post="{{ url(request, '/api/duplicates/' ~ (group.id) ~ '/resolve') }}"
           hx-on::after-request="document.getElementById('dup-group-{{ group.id }}').remove()">
           [ack]
         </button>
@@ -62,7 +62,7 @@
               <span class="text-red-500">KILL</span>
               {% endif %}
             </td>
-            <td class="px-2 py-1"><a class="text-cyan-400 hover:underline" href="/processes/{{ m.pid }}">{{ m.pid }}</a></td>
+            <td class="px-2 py-1"><a class="text-cyan-400 hover:underline" href="{{ url(request, '/processes/' ~ (m.pid)) }}">{{ m.pid }}</a></td>
             <td class="px-2 py-1 whitespace-nowrap hidden sm:table-cell">
               {% if m.project %}<span class="text-amber-300">{{ m.project }}</span>{% else %}<span class="text-zinc-700">—</span>{% endif %}
             </td>

@@ -6,16 +6,17 @@
     <title>ProcSentry</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-    <link rel="stylesheet" href="/static/app.css">
+    <link rel="stylesheet" href="{{ url(request, '/static/app.css') }}">
     <script>
       document.addEventListener("htmx:configRequest", (event) => {
         const token = document.cookie.split("; ").find((row) => row.startsWith("procsentry_csrf="))?.split("=")[1];
         if (token) event.detail.headers["x-csrf-token"] = decodeURIComponent(token);
       });
+      const ROOT = "{{ url(request, '/') }}".replace(/\/$/, "");
       document.addEventListener("keydown", (event) => {
         if (event.target.tagName === "INPUT") return;
-        if (event.key === "g") location.href = "/";
-        if (event.key === "d") location.href = "/duplicates";
+        if (event.key === "g") location.href = ROOT + "/";
+        if (event.key === "d") location.href = ROOT + "/duplicates";
       });
     </script>
   </head>
@@ -38,11 +39,11 @@
                                    after:absolute after:left-2 after:right-2 after:-bottom-[9px]
                                    after:h-[2px] after:rounded-full after:{{ accent }}
                 {% else %}{{ idle }} hover:text-zinc-100 hover:bg-zinc-800{% endif %}"
-         href="{{ href }}">{{ caller() if caller is defined else label }}</a>
+         href="{{ url(request, href) }}">{{ caller() if caller is defined else label }}</a>
     {%- endmacro -%}
     <nav class="border-b border-zinc-800 bg-zinc-900">
       <div class="mx-auto flex max-w-7xl items-center gap-1 px-4 py-2 text-xs font-mono">
-        <a class="font-bold text-green-400 tracking-tight mr-2 shrink-0" href="/">ProcSentry</a>
+        <a class="font-bold text-green-400 tracking-tight mr-2 shrink-0" href="{{ url(request, '/') }}">ProcSentry</a>
 
         {# Desktop nav #}
         <div class="hidden md:flex items-center gap-1 flex-1 min-w-0">
@@ -60,10 +61,10 @@
                                          after:absolute after:left-2 after:right-2 after:-bottom-[9px]
                                          after:h-[2px] after:rounded-full after:bg-amber-400
                     {% else %}text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800{% endif %}"
-             href="/alerts">
+             href="{{ url(request, '/alerts') }}">
             alerts
             <span id="nav-alert-badge"
-              hx-get="/partials/nav-counts"
+              hx-get="{{ url(request, '/partials/nav-counts') }}"
               hx-trigger="load, every 10s"
               hx-swap="outerHTML"></span>
           </a>
@@ -74,10 +75,10 @@
 
         {# Mobile: alert badge + hamburger #}
         <div class="flex md:hidden items-center gap-2 ml-auto">
-          <a href="/alerts" class="flex items-center gap-1 text-zinc-400 px-2 py-1 rounded hover:bg-zinc-800">
+          <a href="{{ url(request, '/alerts') }}" class="flex items-center gap-1 text-zinc-400 px-2 py-1 rounded hover:bg-zinc-800">
             alerts
             <span id="nav-alert-badge-mobile"
-              hx-get="/partials/nav-counts"
+              hx-get="{{ url(request, '/partials/nav-counts') }}"
               hx-trigger="load, every 10s"
               hx-swap="outerHTML"></span>
           </a>

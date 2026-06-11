@@ -35,7 +35,7 @@
         <td class="px-2 py-1 text-cyan-400 font-bold">{{ row.port }}</td>
         <td class="px-2 py-1 text-zinc-500">{{ row.protocol }}</td>
         <td class="px-2 py-1 text-zinc-400">{{ row.address }}</td>
-        <td class="px-2 py-1"><a class="text-cyan-400 hover:underline" href="/processes/{{ row.pid }}">{{ row.process }}</a> <span class="text-zinc-600">({{ row.pid }})</span></td>
+        <td class="px-2 py-1"><a class="text-cyan-400 hover:underline" href="{{ url(request, '/processes/' ~ (row.pid)) }}">{{ row.process }}</a> <span class="text-zinc-600">({{ row.pid }})</span></td>
         <td class="px-2 py-1">{% if row.public %}<span class="text-amber-400">PUBLIC</span>{% else %}<span class="text-zinc-600">local</span>{% endif %}</td>
       </tr>
       {% endfor %}

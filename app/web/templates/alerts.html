@@ -15,7 +15,7 @@
       </div>
       <button
         class="shrink-0 font-mono text-xs border border-zinc-700 text-zinc-400 hover:border-green-700 hover:text-green-400 px-2 py-1 rounded transition-colors"
-        hx-post="/api/alerts/{{ alert.id }}/resolve"
+        hx-post="{{ url(request, '/api/alerts/' ~ (alert.id) ~ '/resolve') }}"
         hx-on::after-request="document.getElementById('alert-{{ alert.id }}').remove()">
         [ack]
       </button>
