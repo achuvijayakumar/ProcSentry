@@ -17,6 +17,7 @@ from app.database.models import (
     DuplicateGroupRecord,
     KillRecord,
     ProcessNoteRecord,
+    ServiceActionRecord,
     ProcessHistoryRecord,
     ProcessRecord,
     utcnow,
@@ -396,6 +397,22 @@ class ProcessRepository:
             if since is not None:
                 stmt = stmt.where(KillRecord.killed_at >= since)
             stmt = stmt.order_by(desc(KillRecord.killed_at)).limit(limit)
+            records = list(session.scalars(stmt))
+            for record in records:
+                session.expunge(record)
+            return records
+
+    def record_service_action(self, *, unit: str, action: str, ok: bool, detail: str = "") -> None:
+        """Persist one systemd unit action for the audit trail."""
+
+        with session_scope(self._session_factory) as session:
+            session.add(ServiceActionRecord(unit=unit, action=action, ok=ok, detail=detail))
+
+    def list_service_actions(self, limit: int = 50) -> list[ServiceActionRecord]:
+        """Return recent service actions, newest first."""
+
+        with session_scope(self._session_factory) as session:
+            stmt = select(ServiceActionRecord).order_by(desc(ServiceActionRecord.created_at)).limit(limit)
             records = list(session.scalars(stmt))
             for record in records:
                 session.expunge(record)

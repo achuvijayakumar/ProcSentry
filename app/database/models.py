@@ -125,6 +125,19 @@ class KillRecord(Base):
     killed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
 
+class ServiceActionRecord(Base):
+    """One row per systemd unit action issued through the dashboard."""
+
+    __tablename__ = "service_actions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    unit: Mapped[str] = mapped_column(String(255), index=True)
+    action: Mapped[str] = mapped_column(String(32))
+    ok: Mapped[bool] = mapped_column(Boolean, default=False)
+    detail: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
 class ProcessNoteRecord(Base):
     """Operator note/tag attached to a process fingerprint or PID."""
 

@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="mb-3 font-mono text-xs text-zinc-500 uppercase tracking-widest">// systemd services
+  {% if failed_count %}<span class="text-red-400 normal-case">· {{ failed_count }} failed</span>{% endif %}
+</h1>
+
+{% if errors %}
+<div class="mb-3 rounded border border-amber-800 bg-amber-950/30 p-2 font-mono text-[10px] text-amber-400">
+  {% for e in errors %}<div>⚠ {{ e }}</div>{% endfor %}
+</div>
+{% endif %}
+
+<div class="rounded border border-zinc-800 bg-zinc-900 overflow-x-auto mb-4">
+  <table class="min-w-full font-mono text-xs">
+    <thead class="bg-zinc-950/40 text-zinc-600 text-[10px] uppercase tracking-wider">
+      <tr>
+        <th class="px-3 py-1.5 text-left">Unit</th>
+        <th class="px-2 py-1.5 text-left w-20"><span class="ps-tip" data-tip="active = running, failed = crashed/exited with error, inactive = stopped.">State</span></th>
+        <th class="px-2 py-1.5 text-left w-24 hidden sm:table-cell"><span class="ps-tip" data-tip="enabled = starts on boot, disabled = manual start only, static = started by another unit.">Boot</span></th>
+        <th class="px-2 py-1.5 text-left hidden md:table-cell">Description</th>
+        <th class="px-2 py-1.5 text-right whitespace-nowrap">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-zinc-800/60">
+      {% for s in services %}
+      {% set row_border = "border-l-2 border-red-500" if s.active == "failed" else ("border-l-2 border-amber-500" if s.is_critical else "") %}
+      <tr class="hover:bg-zinc-800/50 {{ row_border }}" id="svc-row-{{ loop.index }}">
+        <td class="px-3 py-1 text-zinc-200 whitespace-nowrap">
+          {{ s.name }}
+          {% if s.is_critical %}<span class="ps-tip ps-tip-badge text-amber-400 text-[10px] border border-amber-800 px-1 rounded" data-tip="Critical unit: stopping this can lock you out of the server. Stop is refused; restart needs an extra confirm.">CRIT</span>{% endif %}
+        </td>
+        <td class="px-2 py-1 w-20 {% if s.active == 'active' %}text-green-400{% elif s.active == 'failed' %}text-red-400 font-bold{% else %}text-zinc-500{% endif %}">{{ s.active }}<span class="text-zinc-600 hidden lg:inline">/{{ s.sub }}</span></td>
+        <td class="px-2 py-1 w-24 hidden sm:table-cell {% if s.enabled == 'enabled' %}text-zinc-400{% else %}text-zinc-600{% endif %}">{{ s.enabled }}</td>
+        <td class="px-2 py-1 text-zinc-500 hidden md:table-cell max-w-md truncate">{{ s.description }}</td>
+        <td class="px-2 py-1 text-right whitespace-nowrap">
+          <span id="svc-result-{{ loop.index }}"></span>
+          <button class="font-mono text-xs text-zinc-400 border border-zinc-700 hover:border-cyan-700 hover:text-cyan-400 px-1.5 py-0.5 rounded transition-colors"
+            hx-get="{{ url(request, '/api/services/' ~ (s.name) ~ '/journal') }}"
+            hx-target="#svc-journal"
+            hx-swap="textContent"
+            onclick="document.getElementById('svc-journal-box').classList.remove('hidden'); document.getElementById('svc-journal-title').textContent='{{ s.name }}'">
+            [logs]
+          </button>
+          {% if s.is_critical %}
+          <button class="font-mono text-xs text-amber-400 border border-amber-800 hover:border-amber-500 px-1.5 py-0.5 rounded transition-colors"
+            hx-post="{{ url(request, '/api/services/' ~ (s.name) ~ '/restart?force=true') }}"
+            hx-confirm="⚠ {{ s.name }} is CRITICAL. A failed restart can lock you out of this server permanently (no console access). Really restart?"
+            hx-target="#svc-result-{{ loop.index }}"
+            hx-swap="innerHTML">
+            [restart]
+          </button>
+          {% else %}
+          <button class="font-mono text-xs text-green-400 border border-green-900 hover:border-green-600 px-1.5 py-0.5 rounded transition-colors"
+            hx-post="{{ url(request, '/api/services/' ~ (s.name) ~ '/restart') }}"
+            hx-confirm="Restart {{ s.name }}?"
+            hx-target="#svc-result-{{ loop.index }}"
+            hx-swap="innerHTML">
+            [restart]
+          </button>
+          {% if s.active == 'active' %}
+          <button class="font-mono text-xs text-red-500 border border-red-800 hover:border-red-500 px-1.5 py-0.5 rounded transition-colors"
+            hx-post="{{ url(request, '/api/services/' ~ (s.name) ~ '/stop') }}"
+            hx-confirm="Stop {{ s.name }}? It will stay down until started again (or until next boot if enabled)."
+            hx-target="#svc-result-{{ loop.index }}"
+            hx-swap="innerHTML">
+            [stop]
+          </button>
+          {% else %}
+          <button class="font-mono text-xs text-cyan-400 border border-cyan-900 hover:border-cyan-600 px-1.5 py-0.5 rounded transition-colors"
+            hx-post="{{ url(request, '/api/services/' ~ (s.name) ~ '/start') }}"
+            hx-confirm="Start {{ s.name }}?"
+            hx-target="#svc-result-{{ loop.index }}"
+            hx-swap="innerHTML">
+            [start]
+          </button>
+          {% endif %}
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="px-3 py-4 text-zinc-500">— could not list services —</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div id="svc-journal-box" class="hidden mb-4 rounded border border-zinc-800 bg-zinc-950 p-3">
+  <div class="flex items-center justify-between mb-2">
+    <span class="font-mono text-xs text-cyan-400">journal · <span id="svc-journal-title"></span></span>
+    <button class="font-mono text-xs text-zinc-500 hover:text-zinc-300" onclick="document.getElementById('svc-journal-box').classList.add('hidden')">[close]</button>
+  </div>
+  <pre id="svc-journal" class="font-mono text-[10px] text-zinc-400 overflow-x-auto whitespace-pre-wrap max-h-96 overflow-y-auto"></pre>
+</div>
+
+<h2 class="mb-2 font-mono text-xs text-zinc-500 uppercase tracking-widest">// timers</h2>
+<div class="rounded border border-zinc-800 bg-zinc-900 overflow-x-auto mb-4">
+  <table class="min-w-full font-mono text-xs">
+    <thead class="bg-zinc-950/40 text-zinc-600 text-[10px] uppercase tracking-wider">
+      <tr>
+        <th class="px-3 py-1.5 text-left">Timer</th>
+        <th class="px-2 py-1.5 text-left hidden sm:table-cell">Activates</th>
+        <th class="px-2 py-1.5 text-left">Next run</th>
+        <th class="px-2 py-1.5 text-left hidden md:table-cell">Last run</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-zinc-800/60">
+      {% for t in timers %}
+      <tr class="hover:bg-zinc-800/50">
+        <td class="px-3 py-1 text-zinc-200 whitespace-nowrap">{{ t.name }}</td>
+        <td class="px-2 py-1 text-zinc-400 hidden sm:table-cell">{{ t.activates }}</td>
+        <td class="px-2 py-1 text-zinc-400 whitespace-nowrap">{{ t.next_run }}</td>
+        <td class="px-2 py-1 text-zinc-500 hidden md:table-cell whitespace-nowrap">{{ t.last_run }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="px-3 py-4 text-zinc-500">— no timers —</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2 class="mb-2 font-mono text-xs text-zinc-500 uppercase tracking-widest">// cron entries <span class="normal-case text-zinc-600">(read-only)</span></h2>
+<div class="rounded border border-zinc-800 bg-zinc-900 overflow-x-auto mb-4">
+  <table class="min-w-full font-mono text-xs">
+    <thead class="bg-zinc-950/40 text-zinc-600 text-[10px] uppercase tracking-wider">
+      <tr>
+        <th class="px-3 py-1.5 text-left w-44">Source</th>
+        <th class="px-2 py-1.5 text-left">Entry</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-zinc-800/60">
+      {% for c in cron %}
+      <tr class="hover:bg-zinc-800/50">
+        <td class="px-3 py-1 text-amber-300 whitespace-nowrap w-44">{{ c.source }}</td>
+        <td class="px-2 py-1 text-zinc-300"><span class="break-all">{{ c.line }}</span></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="2" class="px-3 py-4 text-zinc-500">— no cron entries —</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if recent_actions %}
+<h2 class="mb-2 font-mono text-xs text-zinc-500 uppercase tracking-widest">// recent actions</h2>
+<div class="rounded border border-zinc-800 bg-zinc-900 overflow-x-auto">
+  <table class="min-w-full font-mono text-xs">
+    <tbody class="divide-y divide-zinc-800/60">
+      {% for a in recent_actions %}
+      <tr>
+        <td class="px-3 py-1 text-zinc-500 whitespace-nowrap">{{ a.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td class="px-2 py-1 {% if a.ok %}text-green-400{% else %}text-red-400{% endif %}">{{ '✓' if a.ok else '✗' }} {{ a.action }}</td>
+        <td class="px-2 py-1 text-zinc-200">{{ a.unit }}</td>
+        <td class="px-2 py-1 text-zinc-500 max-w-xs truncate">{{ a.detail }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}
