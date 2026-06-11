@@ -13,6 +13,31 @@
         if (token) event.detail.headers["x-csrf-token"] = decodeURIComponent(token);
       });
       const ROOT = "{{ url(request, '/') }}".replace(/\/$/, "");
+      // Honest kill feedback: only show success when the server said so.
+      function psKillResult(event, resultId, button) {
+        const el = document.getElementById(resultId);
+        const xhr = event.detail.xhr;
+        if (event.detail.successful) {
+          let outcome = "✓ killed";
+          try {
+            const body = JSON.parse(xhr.responseText);
+            if (body.outcome === "terminated") outcome = "✓ terminated";
+            else if (body.outcome === "kill-signaled") outcome = "⚠ SIGKILL sent";
+          } catch (_) {}
+          if (el) { el.textContent = outcome; el.className = "font-mono text-xs text-green-400"; }
+          button.disabled = true;
+          button.classList.add("opacity-40");
+          return;
+        }
+        let reason = "✗ failed";
+        if (xhr.status === 403) reason = "✗ permission denied";
+        else if (xhr.status === 404) reason = "✗ already gone";
+        try {
+          const body = JSON.parse(xhr.responseText);
+          if (body.detail) reason = "✗ " + body.detail;
+        } catch (_) {}
+        if (el) { el.textContent = reason; el.className = "font-mono text-xs text-red-400"; }
+      }
       document.addEventListener("keydown", (event) => {
         if (event.target.tagName === "INPUT") return;
         if (event.key === "g") location.href = ROOT + "/";
