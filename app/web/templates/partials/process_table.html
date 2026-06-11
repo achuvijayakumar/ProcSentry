@@ -28,7 +28,11 @@
           {% endif %}
         </td>
         <td class="px-2 py-1 max-w-[9rem] sm:max-w-xs font-mono">
-          <div class="text-zinc-100 truncate">{{ proc.friendly_label or proc.name }}</div>
+          <div class="text-zinc-100 truncate">{{ proc.friendly_label or proc.name }}
+            {% if proc.systemd_unit and proc.systemd_unit.endswith('.service') %}
+            <a href="{{ url(request, '/services') }}" onclick="event.stopPropagation()" class="ps-tip ps-tip-badge text-cyan-400 text-[10px] border border-cyan-900 px-1 rounded hover:bg-cyan-950" data-tip="Managed by {{ proc.systemd_unit }}. systemd may auto-respawn it after a kill — restarting the unit from /services is usually the right move.">{{ proc.systemd_unit }}</a>
+            {% endif %}
+          </div>
           {% if proc.cmdline %}
           <div class="text-zinc-600 text-[10px] truncate hidden sm:block" title="{{ proc.cmdline.replace('\0', ' ') }}">{{ proc.cmdline.replace('\0', ' ') }}</div>
           {% endif %}
@@ -51,7 +55,7 @@
           <button
             class="font-mono text-xs text-red-500 border border-red-800 hover:border-red-500 px-1.5 py-0.5 rounded transition-colors"
             hx-post="{{ url(request, '/api/processes/' ~ (proc.pid) ~ '/kill') }}"
-            hx-confirm="Kill {{ proc.project + ' · ' if proc.project else '' }}{{ proc.friendly_label or proc.name }} (PID {{ proc.pid }})?"
+            hx-confirm="Kill {{ proc.project + ' · ' if proc.project else '' }}{{ proc.friendly_label or proc.name }} (PID {{ proc.pid }})?{% if proc.systemd_unit and proc.systemd_unit.endswith('.service') %} ⚠ Managed by {{ proc.systemd_unit }} — systemd may restart it immediately. Prefer restarting the unit from the services tab.{% endif %}"
             hx-on::after-request="psKillResult(event, 'kill-result-{{ proc.pid }}', this)">
             [×]
           </button>

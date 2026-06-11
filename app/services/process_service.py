@@ -12,6 +12,7 @@ from app.core.resource_tracker import ResourceTracker
 from app.core.scanner import ProcessScanner
 from app.core.security_engine import SecurityEngine
 from app.database.repository import ProcessRepository
+from app.services import host_services
 from app.services.alert_service import AlertService
 from app.services.runtime_registry import get_runtime_metrics
 
@@ -39,6 +40,8 @@ class ProcessService:
         self._last_cleanup_at = 0.0
         self._last_checkpoint_at = 0.0
         self._last_vacuum_at = 0.0
+        self._last_unit_check_at = 0.0
+        self._known_failed_units: set[str] = set()
 
     def stop(self) -> None:
         """Request daemon shutdown."""
@@ -56,6 +59,31 @@ class ProcessService:
                 await asyncio.wait_for(self._stop.wait(), timeout=self._settings.scan_interval)
             except TimeoutError:
                 continue
+
+    def _check_failed_units(self) -> None:
+        """Alert on units that newly entered the failed state; note recoveries."""
+
+        failed = host_services.list_failed_units()
+        if failed is None:  # systemctl unavailable or probe error — skip cycle
+            return
+        current = set(failed)
+        for unit in sorted(current - self._known_failed_units):
+            self._alerts.emit(
+                "systemd",
+                "CRITICAL",
+                f"systemd unit failed: {unit} — check /services for logs and restart",
+                fingerprint=unit,
+                category="systemd",
+            )
+        for unit in sorted(self._known_failed_units - current):
+            self._alerts.emit(
+                "systemd",
+                "INFO",
+                f"systemd unit recovered: {unit}",
+                fingerprint=unit,
+                category="systemd",
+            )
+        self._known_failed_units = current
 
     async def scan_once(self) -> None:
         """Run one full scan and detection cycle."""
@@ -95,6 +123,9 @@ class ProcessService:
                 f"{', '.join(str(proc.pid) for proc in group.processes)}",
                 fingerprint=group.fingerprint,
             )
+        if time.monotonic() - self._last_unit_check_at > 30:
+            self._last_unit_check_at = time.monotonic()
+            self._check_failed_units()
         for proc, severity, message in self._resources.high_usage(snapshots):
             self._alerts.emit("resource", severity, message, pid=proc.pid, fingerprint=proc.fingerprint)
         for finding in security_findings:

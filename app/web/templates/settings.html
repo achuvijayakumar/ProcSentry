@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="mb-3 font-mono text-xs text-zinc-500 uppercase tracking-widest">// settings</h1>
+
+<div class="max-w-md rounded border border-zinc-800 bg-zinc-900 p-4">
+  <h2 class="mb-3 font-mono text-xs text-zinc-300 uppercase tracking-wider">Change password</h2>
+  {% if not auth_enabled %}
+  <p class="font-mono text-xs text-amber-400 mb-2">Auth is disabled (web.auth_enabled: false) — nothing to change.</p>
+  {% else %}
+  <p class="font-mono text-[10px] text-zinc-500 mb-3">User: <span class="text-zinc-300">{{ auth_username }}</span> · minimum {{ min_length }} characters · applies on next login, current session stays valid.</p>
+  <form hx-post="{{ url(request, '/settings/password') }}" hx-target="#pw-result" hx-swap="innerHTML"
+        hx-on::after-request="if (event.detail.successful) this.reset()">
+    <label class="block font-mono text-[10px] text-zinc-500 uppercase mb-1" for="current_password">Current password</label>
+    <input id="current_password" name="current_password" type="password" required autocomplete="current-password"
+           class="mb-3 w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1.5 font-mono text-xs text-zinc-100 focus:border-green-500 focus:outline-none">
+    <label class="block font-mono text-[10px] text-zinc-500 uppercase mb-1" for="new_password">New password</label>
+    <input id="new_password" name="new_password" type="password" required minlength="{{ min_length }}" autocomplete="new-password"
+           class="mb-3 w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1.5 font-mono text-xs text-zinc-100 focus:border-green-500 focus:outline-none">
+    <label class="block font-mono text-[10px] text-zinc-500 uppercase mb-1" for="confirm_password">Confirm new password</label>
+    <input id="confirm_password" name="confirm_password" type="password" required minlength="{{ min_length }}" autocomplete="new-password"
+           class="mb-3 w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1.5 font-mono text-xs text-zinc-100 focus:border-green-500 focus:outline-none">
+    <div class="flex items-center gap-3">
+      <button type="submit" class="rounded border border-green-700 px-3 py-1.5 font-mono text-xs text-green-400 hover:bg-green-950 transition-colors">[ change password ]</button>
+      <span id="pw-result"></span>
+    </div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

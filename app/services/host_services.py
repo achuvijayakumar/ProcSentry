@@ -209,6 +209,23 @@ def list_cron() -> tuple[list[CronEntry], list[str]]:
     return entries, errors
 
 
+def list_failed_units() -> list[str] | None:
+    """Return failed service unit names, or None when the probe itself fails."""
+
+    try:
+        proc = _run(["systemctl", "--failed", "--type=service", "--plain", "--no-legend", "--no-pager"])
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if proc.returncode != 0:
+        return None
+    units = []
+    for line in proc.stdout.splitlines():
+        parts = line.split()
+        if parts and parts[0].endswith(".service"):
+            units.append(parts[0])
+    return units
+
+
 def unit_journal(unit: str, lines: int = 50) -> str:
     """Return the last journal lines for a unit."""
 
