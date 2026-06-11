@@ -59,6 +59,8 @@ def main() -> None:
 
         settings, repository = bootstrap(args.config)
         app = create_app(settings, repository)
+        if args.config:
+            app.state.config_path = args.config
         uvicorn.run(app, host=settings.web.host, port=settings.web.port)
     elif command == "tui":
         from app.tui.dashboard import run_tui

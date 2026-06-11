@@ -156,6 +156,7 @@
             {% if p.is_orphan %}<span class="ps-tip ps-tip-badge text-zinc-400 text-[10px] border border-zinc-700 px-1 rounded" data-tip="Orphan: original parent died, so init (PID 1) adopted it. Still runs normally — often a stray background process you can kill.">ORPHAN</span>{% endif %}
             {% if p.executable_deleted %}<span class="ps-tip ps-tip-badge text-red-400 text-[10px] border border-red-800 px-1 rounded" data-tip="The binary on disk has been deleted while the process is still running. Either a routine package upgrade — restart the service — or a security red flag (malware hiding its tracks).">DEL</span>{% endif %}
             {% if p.is_duplicate %}<a href="{{ url(request, '/duplicates') }}" onclick="event.stopPropagation()" class="ps-tip ps-tip-badge text-amber-400 text-[10px] border border-amber-800 px-1 rounded hover:bg-amber-950" data-tip="Another process with the same fingerprint (same exe + cwd + normalized args) is running. Click to open /duplicates and resolve.">DUP</a>{% endif %}
+            {% if p.systemd_unit and p.systemd_unit.endswith('.service') %}<a href="{{ url(request, '/services') }}" onclick="event.stopPropagation()" class="ps-tip ps-tip-badge text-cyan-400 text-[10px] border border-cyan-900 px-1 rounded hover:bg-cyan-950" data-tip="Managed by {{ p.systemd_unit }}. systemd may auto-respawn it after a kill — restarting the unit from /services is usually the right move.">{{ p.systemd_unit }}</a>{% endif %}
           </div>
         </td>
         <td class="px-2 py-1 text-zinc-500 w-24 truncate hidden md:table-cell">{{ p.user or '—' }}</td>
@@ -169,7 +170,7 @@
           <button
             class="text-red-500 border border-red-800 hover:border-red-500 px-1.5 py-0.5 rounded transition-colors"
             hx-post="{{ url(request, '/api/processes/' ~ (p.pid) ~ '/kill') }}"
-            hx-confirm="Kill PID {{ p.pid }} ({{ p.name }})?"
+            hx-confirm="Kill PID {{ p.pid }} ({{ p.name }})?{% if p.systemd_unit and p.systemd_unit.endswith('.service') %} ⚠ Managed by {{ p.systemd_unit }} — systemd may restart it immediately. Prefer restarting the unit from the services tab.{% endif %}"
             hx-on::after-request="psKillResult(event, 'kill-result-{{ p.pid }}', this)">
             [×]
           </button>
