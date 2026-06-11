@@ -7,6 +7,8 @@ import os
 import re
 import signal
 from dataclasses import asdict
+
+import psutil
 from pathlib import PurePosixPath
 
 from fastapi import APIRouter, Form, HTTPException, Query, Request
@@ -587,38 +589,71 @@ def _record_kill_from_record(repository, record, *, killed_via: str) -> None:
         pass
 
 
+_KILL_GRACE_SECONDS = 2.0
+
+
+def _terminate_pid(pid: int, grace_seconds: float = _KILL_GRACE_SECONDS) -> str:
+    """SIGTERM a process, escalate to SIGKILL if it survives the grace period.
+
+    Returns the outcome: "terminated" (exited on SIGTERM) or "killed"
+    (needed SIGKILL). Raises psutil.NoSuchProcess / psutil.AccessDenied.
+    """
+    proc = psutil.Process(pid)
+    proc.terminate()
+    try:
+        proc.wait(timeout=grace_seconds)
+        return "terminated"
+    except psutil.TimeoutExpired:
+        pass
+    proc.kill()
+    try:
+        proc.wait(timeout=grace_seconds)
+    except psutil.TimeoutExpired:
+        # SIGKILL delivered but process not reaped (uninterruptible sleep
+        # or zombie awaiting parent). Nothing more userspace can do.
+        return "kill-signaled"
+    return "killed"
+
+
 @router.post("/api/processes/{pid}/kill")
 def kill_process(request: Request, pid: int) -> dict[str, object]:
     repository = request.app.state.repository
     target = next((p for p in _decorate(repository.list_processes(limit=5000)) if p.pid == pid), None)
     try:
-        os.kill(pid, signal.SIGTERM)
-    except PermissionError as exc:
-        raise HTTPException(status_code=403, detail="Permission denied") from exc
-    except ProcessLookupError as exc:
-        raise HTTPException(status_code=404, detail="Process not found") from exc
+        outcome = _terminate_pid(pid)
+    except psutil.AccessDenied as exc:
+        raise HTTPException(
+            status_code=403,
+            detail="Permission denied — dashboard user cannot signal this process",
+        ) from exc
+    except psutil.NoSuchProcess as exc:
+        raise HTTPException(status_code=404, detail="Process already gone") from exc
     if target is not None:
         _record_kill_from_record(repository, target, killed_via="single")
-    return {"ok": True, "pid": pid}
+    return {"ok": True, "pid": pid, "outcome": outcome}
 
 
 @router.post("/api/apps/{app_name}/kill", response_class=HTMLResponse)
 def kill_app(request: Request, app_name: str) -> HTMLResponse:
-    """SIGTERM all processes belonging to the named app/project."""
+    """Terminate all processes belonging to the named app/project."""
     processes = _decorate(request.app.state.repository.list_processes(limit=2000))
     targets = [p for p in processes if p.project == app_name]
     if not targets:
         return HTMLResponse('<span class="font-mono text-xs text-zinc-500">— no processes —</span>')
-    killed, failed = 0, 0
+    killed, gone, denied = 0, 0, 0
     repository = request.app.state.repository
     for p in targets:
         try:
-            os.kill(p.pid, signal.SIGTERM)
+            _terminate_pid(p.pid)
             killed += 1
             _record_kill_from_record(repository, p, killed_via="app")
-        except (PermissionError, ProcessLookupError):
-            failed += 1
-    msg = f'<span class="font-mono text-xs text-green-400">SIGTERM → {killed} pid(s)</span>'
-    if failed:
-        msg += f' <span class="font-mono text-xs text-amber-400">· {failed} failed</span>'
+        except psutil.NoSuchProcess:
+            gone += 1
+        except psutil.AccessDenied:
+            denied += 1
+    msg = f'<span class="font-mono text-xs text-green-400">killed {killed} pid(s)</span>'
+    if gone:
+        msg += f' <span class="font-mono text-xs text-zinc-500">· {gone} already gone</span>'
+    if denied:
+        msg += f' <span class="font-mono text-xs text-red-400">· {denied} permission denied</span>'
     return HTMLResponse(msg)

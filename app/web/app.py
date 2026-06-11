@@ -2,24 +2,46 @@
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
+import logging
+import time
+
 from fastapi import FastAPI
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-import time
 
 from app.config import Settings
 from app.collectors.common.capabilities import detect_capabilities
 from app.database.repository import ProcessRepository
+from app.services.process_service import ProcessService
 from app.web.routes import alerts, duplicates, ports, processes, roast, system
 from app.web.security import install_security
 from app.web.url_prefix import prefixed_url
 
+logger = logging.getLogger(__name__)
+
 
 def create_app(settings: Settings, repository: ProcessRepository) -> FastAPI:
-    """Create the web dashboard app."""
+    """Create the web dashboard app.
 
-    app = FastAPI(title=settings.app_name)
+    Runs the scan loop as a background task so the dashboard always serves
+    live process data, even when the standalone daemon is not installed.
+    """
+
+    service = ProcessService(settings, repository)
+
+    @contextlib.asynccontextmanager
+    async def lifespan(app: FastAPI):
+        task = asyncio.create_task(_run_scanner(service))
+        yield
+        service.stop()
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+    app = FastAPI(title=settings.app_name, lifespan=lifespan)
     app.state.settings = settings
     app.state.repository = repository
     app.state.capabilities = detect_capabilities()
@@ -34,6 +56,20 @@ def create_app(settings: Settings, repository: ProcessRepository) -> FastAPI:
     app.include_router(roast.router)
     app.include_router(system.router)
     return app
+
+
+async def _run_scanner(service: ProcessService) -> None:
+    """Keep the scan loop alive; restart it if a scan cycle crashes."""
+
+    while True:
+        try:
+            await service.run_forever()
+            return
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("Scan loop crashed; restarting in 10s")
+            await asyncio.sleep(10)
 
 
 def _register_url_helper() -> None:

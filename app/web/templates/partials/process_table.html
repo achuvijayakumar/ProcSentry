@@ -52,7 +52,7 @@
             class="font-mono text-xs text-red-500 border border-red-800 hover:border-red-500 px-1.5 py-0.5 rounded transition-colors"
             hx-post="{{ url(request, '/api/processes/' ~ (proc.pid) ~ '/kill') }}"
             hx-confirm="Kill {{ proc.project + ' · ' if proc.project else '' }}{{ proc.friendly_label or proc.name }} (PID {{ proc.pid }})?"
-            hx-on::after-request="document.getElementById('kill-result-{{ proc.pid }}').textContent='✓ sent'; this.disabled=true; this.classList.add('opacity-40')">
+            hx-on::after-request="psKillResult(event, 'kill-result-{{ proc.pid }}', this)">
             [×]
           </button>
         </td>
