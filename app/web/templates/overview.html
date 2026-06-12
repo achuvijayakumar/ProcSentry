@@ -89,6 +89,9 @@
   </div>
 </section>
 
+<input type="search" data-ps-filter="ps-overview" oninput="psFilterRows(this)" placeholder="filter processes... ( / )"
+       class="mb-3 w-full sm:w-64 rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 placeholder-zinc-600 focus:border-cyan-700 focus:outline-none">
+<div id="ps-overview">
 {% set ns = namespace(seen_system=false, seen_unknown=false) %}
 {% for group in groups %}
   {% if group.is_user_app and loop.first %}
@@ -103,7 +106,7 @@
   {% set ns.seen_unknown = true %}
   {% endif %}
 
-<section class="mb-3 rounded border border-zinc-800 bg-zinc-900">
+<section class="mb-3 rounded border border-zinc-800 bg-zinc-900" data-filter-card>
   <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-zinc-800">
     <div class="flex items-baseline gap-2 flex-wrap min-w-0">
       <span class="font-mono text-sm {% if group.is_user_app %}text-amber-300{% elif group.name == 'unknown' %}text-zinc-500{% else %}text-cyan-400{% endif %} truncate max-w-[10rem] sm:max-w-none">// {{ group.name }}</span>
@@ -182,6 +185,7 @@
   </div>
 </section>
 {% endfor %}
+</div>
 
 {% if not groups %}
 <div class="rounded border border-zinc-800 bg-zinc-900 p-6 font-mono text-sm text-zinc-500 text-center">
