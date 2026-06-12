@@ -60,6 +60,16 @@ class WebConfig(BaseModel):
     secure_cookies: bool = False
 
 
+class RemoteHostConfig(BaseModel):
+    """A remote machine reachable over SSH for process inspection."""
+
+    name: str
+    host: str
+    port: int = Field(default=22, ge=1, le=65535)
+    username: str
+    password: str | None = None
+
+
 class HealingConfig(BaseModel):
     """Auto-healing settings. Disabled by default by design."""
 
@@ -84,6 +94,7 @@ class Settings(BaseSettings):
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     web: WebConfig = Field(default_factory=WebConfig)
     healing: HealingConfig = Field(default_factory=HealingConfig)
+    remote_hosts: tuple[RemoteHostConfig, ...] = ()
 
 
 def _merge_dict(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:

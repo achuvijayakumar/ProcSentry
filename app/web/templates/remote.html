@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="mb-3 font-mono text-xs text-zinc-500 uppercase tracking-widest">// remote</h1>
+
+{% if not hosts %}
+<div class="rounded border border-zinc-800 bg-zinc-900 p-4">
+  <p class="font-mono text-xs text-zinc-400">No remote hosts configured. Add one in <a class="text-green-400 hover:underline" href="{{ url(request, '/settings') }}">settings</a>.</p>
+</div>
+{% else %}
+<div id="remote-host-pills" class="mb-3 flex flex-wrap items-center gap-2 font-mono text-xs">
+  {% for h in hosts %}
+  <button data-conn="{{ h.username }}@{{ h.host }}"
+          hx-get="{{ url(request, '/remote/' ~ h.name ~ '/partials/processes') }}"
+          hx-target="#remote-table" hx-swap="innerHTML"
+          hx-indicator="#remote-conn"
+          hx-push-url="?host={{ h.name }}"
+          onclick="psSelectHost(this)"
+          class="ps-host-pill px-2 py-1 rounded border transition-colors {% if h.name == selected %}ps-host-active border-green-700 text-green-400 bg-green-950/40{% else %}border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:border-zinc-600{% endif %}">{{ h.name }}</button>
+  {% endfor %}
+  <button class="ml-auto px-2 py-1 rounded border border-zinc-700 text-zinc-400 hover:text-zinc-100 hover:border-zinc-500 transition-colors"
+          onclick="document.querySelector('#remote-host-pills .ps-host-active')?.click()">[ refresh ]</button>
+</div>
+
+<input data-ps-filter="remote-table"
+       placeholder="/ filter"
+       class="mb-2 w-full max-w-xs rounded border border-zinc-700 bg-zinc-950 px-2 py-1.5 font-mono text-xs text-zinc-100 focus:border-green-500 focus:outline-none"
+       oninput="psFilterRows(this)">
+
+<div class="relative min-h-[10rem]">
+  <div id="remote-conn" class="ps-conn-overlay htmx-indicator">
+    <div class="ps-conn-scan"></div>
+    <p class="text-zinc-500">$ ssh <span id="remote-conn-target" class="text-green-400">{% for h in hosts %}{% if h.name == selected %}{{ h.username }}@{{ h.host }}{% endif %}{% endfor %}</span></p>
+    <p class="tracking-widest">ESTABLISHING SESSION<span class="ps-cursor">▊</span></p>
+  </div>
+  <div id="remote-table"
+       hx-get="{{ url(request, '/remote/' ~ selected ~ '/partials/processes') }}"
+       hx-trigger="load" hx-swap="innerHTML" hx-indicator="#remote-conn">
+  </div>
+</div>
+
+<script>
+  function psSelectHost(btn) {
+    document.querySelectorAll("#remote-host-pills .ps-host-pill").forEach((b) => {
+      b.classList.remove("ps-host-active", "border-green-700", "text-green-400", "bg-green-950/40");
+      b.classList.add("border-zinc-800", "text-zinc-400");
+    });
+    btn.classList.add("ps-host-active", "border-green-700", "text-green-400", "bg-green-950/40");
+    btn.classList.remove("border-zinc-800", "text-zinc-400");
+    const target = document.getElementById("remote-conn-target");
+    if (target) target.textContent = btn.dataset.conn;
+  }
+  // Stagger row entrances so the table "types in" after a host switch.
+  document.addEventListener("htmx:afterSwap", (event) => {
+    if (event.detail.target.id !== "remote-table") return;
+    event.detail.target.querySelectorAll("tbody tr").forEach((tr, i) => {
+      tr.style.animationDelay = Math.min(i * 12, 360) + "ms";
+    });
+  });
+</script>
+{% endif %}
+{% endblock %}

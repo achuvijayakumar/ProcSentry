@@ -1,0 +1,42 @@
+<div id="remote-hosts-box">
+  {% if message %}
+  <p class="mb-2 font-mono text-xs {{ 'text-green-400' if message_ok else 'text-red-400' }}">{{ '✓' if message_ok else '✗' }} {{ message }}</p>
+  {% endif %}
+  {% if hosts %}
+  <table class="w-full font-mono text-xs">
+    <thead>
+      <tr class="text-left text-[10px] text-zinc-500 uppercase">
+        <th class="px-2 py-1">name</th>
+        <th class="px-2 py-1">address</th>
+        <th class="px-2 py-1">user</th>
+        <th class="px-2 py-1">auth</th>
+        <th class="px-2 py-1 text-right">actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-zinc-800">
+      {% for h in hosts %}
+      <tr>
+        <td class="px-2 py-1.5 text-cyan-400"><a href="{{ url(request, '/remote') }}?host={{ h.name }}">{{ h.name }}</a></td>
+        <td class="px-2 py-1.5 text-zinc-300">{{ h.host }}:{{ h.port }}</td>
+        <td class="px-2 py-1.5 text-zinc-400">{{ h.username }}</td>
+        <td class="px-2 py-1.5 text-zinc-500">{{ 'password' if h.password else 'ssh key/agent' }}</td>
+        <td class="px-2 py-1.5 text-right whitespace-nowrap">
+          <span id="host-test-{{ h.name }}"></span>
+          <button class="text-zinc-400 border border-zinc-700 hover:border-zinc-400 px-1.5 py-0.5 rounded transition-colors"
+                  hx-post="{{ url(request, '/settings/remote-hosts/' ~ h.name ~ '/test') }}"
+                  hx-target="#host-test-{{ h.name }}" hx-swap="innerHTML"
+                  hx-indicator="#host-test-{{ h.name }}-busy">[ test ]</button>
+          <span id="host-test-{{ h.name }}-busy" class="htmx-indicator text-zinc-500">…</span>
+          <button class="text-red-500 border border-red-800 hover:border-red-500 px-1.5 py-0.5 rounded transition-colors"
+                  hx-post="{{ url(request, '/settings/remote-hosts/' ~ h.name ~ '/delete') }}"
+                  hx-confirm="Delete remote host '{{ h.name }}'?"
+                  hx-target="#remote-hosts-box" hx-swap="outerHTML">[ delete ]</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="font-mono text-xs text-zinc-500">No remote hosts yet — add one below.</p>
+  {% endif %}
+</div>

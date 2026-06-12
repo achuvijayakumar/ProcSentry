@@ -16,7 +16,7 @@ from app.config import Settings
 from app.collectors.common.capabilities import detect_capabilities
 from app.database.repository import ProcessRepository
 from app.services.process_service import ProcessService
-from app.web.routes import alerts, duplicates, ports, processes, roast, services, settings as settings_routes, system
+from app.web.routes import alerts, duplicates, ports, processes, remote, roast, services, settings as settings_routes, system
 from app.web.security import install_security
 from app.web.url_prefix import prefixed_url
 
@@ -55,6 +55,7 @@ def create_app(settings: Settings, repository: ProcessRepository) -> FastAPI:
     app.include_router(alerts.router)
     app.include_router(roast.router)
     app.include_router(services.router)
+    app.include_router(remote.router)
     app.include_router(settings_routes.router)
     app.include_router(system.router)
     return app
@@ -82,10 +83,10 @@ def _register_url_helper() -> None:
     """
 
     from app.web import security
-    from app.web.routes import alerts, duplicates, ports, processes, roast, services, system
+    from app.web.routes import alerts, duplicates, ports, processes, remote, roast, services, system
     from app.web.routes import settings as settings_routes
 
-    modules = (security, alerts, duplicates, ports, processes, roast, services, settings_routes, system)
+    modules = (security, alerts, duplicates, ports, processes, remote, roast, services, settings_routes, system)
     for module in modules:
         env = module.templates.env
         env.globals["url"] = prefixed_url

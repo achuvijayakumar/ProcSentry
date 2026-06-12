@@ -1,0 +1,45 @@
+{% if error %}
+<div class="rounded border border-red-900 bg-red-950/40 px-3 py-2 font-mono text-xs text-red-400">✗ {{ error }}</div>
+{% else %}
+<p class="mb-2 font-mono text-[10px] text-zinc-500">{{ processes|length }} processes on <span class="text-zinc-300">{{ host.username }}@{{ host.host }}</span></p>
+<div class="overflow-x-auto rounded border border-zinc-800 bg-zinc-900">
+  <table class="w-full font-mono text-xs">
+    <thead>
+      <tr class="text-left text-[10px] text-zinc-500 uppercase border-b border-zinc-800">
+        <th class="px-2 py-1.5 w-16">pid</th>
+        <th class="px-2 py-1.5 w-24">user</th>
+        <th class="px-2 py-1.5 text-right w-14">cpu%</th>
+        <th class="px-2 py-1.5 text-right w-16">mem</th>
+        <th class="px-2 py-1.5 text-right w-16 hidden sm:table-cell">uptime</th>
+        <th class="px-2 py-1.5 w-12 hidden sm:table-cell">stat</th>
+        <th class="px-2 py-1.5">command</th>
+        <th class="px-2 py-1.5 text-right w-10"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-zinc-800/60">
+      {% for p in processes %}
+      <tr class="hover:bg-zinc-800/50">
+        <td class="px-2 py-1 text-cyan-400">{{ p.pid }}</td>
+        <td class="px-2 py-1 text-zinc-500 truncate max-w-[6rem]">{{ p.user }}</td>
+        <td class="px-2 py-1 text-right {% if p.cpu_percent > 50 %}text-red-400{% elif p.cpu_percent > 10 %}text-amber-400{% else %}text-zinc-400{% endif %}">{{ "%.1f"|format(p.cpu_percent) }}</td>
+        <td class="px-2 py-1 text-right text-zinc-300">{% if p.memory_mb >= 1024 %}{{ "%.1f"|format(p.memory_mb / 1024) }}G{% else %}{{ "%.0f"|format(p.memory_mb) }}M{% endif %}</td>
+        <td class="px-2 py-1 text-right text-zinc-500 hidden sm:table-cell">{{ p.elapsed_human }}</td>
+        <td class="px-2 py-1 text-zinc-600 hidden sm:table-cell">{{ p.status }}</td>
+        <td class="px-2 py-1 text-zinc-200 max-w-md truncate" title="{{ p.cmdline }}">{{ p.cmdline }}</td>
+        <td class="px-2 py-1 text-right whitespace-nowrap">
+          <span id="rkill-{{ p.pid }}"></span>
+          <button class="text-red-500 border border-red-800 hover:border-red-500 px-1.5 py-0.5 rounded transition-colors"
+                  hx-post="{{ url(request, '/remote/' ~ host.name ~ '/kill/' ~ p.pid) }}"
+                  hx-confirm="Kill PID {{ p.pid }} ({{ p.name }}) on {{ host.name }}?"
+                  hx-swap="none"
+                  hx-on::after-request="psKillResult(event, 'rkill-{{ p.pid }}', this)">[×]</button>
+        </td>
+      </tr>
+      {% endfor %}
+      {% if not processes %}
+      <tr><td colspan="8" class="px-3 py-4 text-zinc-500 text-center">— no processes —</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
