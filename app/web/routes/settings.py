@@ -33,6 +33,7 @@ def settings_page(request: Request) -> HTMLResponse:
             "auth_enabled": settings.web.auth_enabled,
             "auth_username": settings.web.auth_username,
             "min_length": MIN_PASSWORD_LENGTH,
+            "hosts": settings.remote_hosts,
         },
     )
 

@@ -110,6 +110,7 @@
           {{ nav_link("/suspicious",  "suspicious") }}
           {{ nav_link("/ports",       "ports") }}
           {{ nav_link("/services",    "services") }}
+          {{ nav_link("/remote",      "remote") }}
           {%- set alerts_active = _path == "/alerts" or _path.startswith("/alerts/") -%}
           <a aria-current="{{ 'page' if alerts_active else 'false' }}"
              class="relative px-2 py-1 rounded transition-colors flex items-center gap-1.5
@@ -156,6 +157,7 @@
         {{ nav_link("/suspicious",  "suspicious",  extra_class="text-center") }}
         {{ nav_link("/ports",       "ports",       extra_class="text-center") }}
         {{ nav_link("/services",    "services",    extra_class="text-center") }}
+        {{ nav_link("/remote",      "remote",      extra_class="text-center") }}
         {{ nav_link("/roast",       "roast",       idle="text-pink-400", active_text="text-pink-200", accent="bg-pink-400", extra_class="text-center") }}
         {{ nav_link("/capabilities/view", "caps",  idle="text-zinc-500", extra_class="text-center") }}
         {{ nav_link("/settings",    "settings",    idle="text-zinc-500", extra_class="text-center") }}
